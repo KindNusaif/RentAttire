@@ -5,13 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rent Attire | Add Product</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .form-label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.92rem;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+        .config-card {
+            background: var(--cream);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .size-grid-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        .size-grid-table th, .size-grid-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+        }
+        .size-grid-table th {
+            background: #ede6dc;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        .stock-input {
+            width: 70px;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+        }
+    </style>
 </head>
 <body style="background:var(--background);">
     <header>
         <div class="container navbar">
             <a href="vendor-dashboard.html" class="logo">
                 <img src="images/logo.svg" alt="Rent Attire logo" width="30" height="30">
-                Rent Attire
+                Rent Attire Vendor
             </a>
             <nav class="nav-links">
                 <a href="vendor-dashboard.html">Dashboard</a>
@@ -21,48 +57,475 @@
             </nav>
             <div class="nav-icons">
                 <a href="index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">View Store</a>
-                <a href="index.html" style="margin-left: 10px;">Logout</a>
+                <a href="#" data-signout style="margin-left: 10px;">Logout</a>
             </div>
         </div>
     </header>
 
     <section class="section">
-        <div class="container" style="max-width:600px;">
-            <h1 class="mb-4">Add New Product</h1>
+        <div class="container" style="max-width:760px;">
+            <div class="d-flex justify-between align-center mb-4">
+                <h1>Add New Clothing Product</h1>
+                <a href="vendor-products.html" class="btn btn-outline" style="font-size:0.85rem;">&larr; Back to Products</a>
+            </div>
+
             <div class="card p-4">
-                <form onsubmit="return validateAddProductForm(event)">
+                <form id="vendorAddProductForm" onsubmit="handleVendorAddProduct(event)">
+                    <div id="formAlert" style="display:none; padding:12px 16px; border-radius:6px; margin-bottom:16px; font-size:0.9rem;"></div>
+
                     <div class="form-group mb-3">
-                        <label>Product Name</label>
-                        <input type="text" id="productName" class="form-control" required>
+                        <label class="form-label">Product Name <span style="color:var(--error)">*</span></label>
+                        <input type="text" id="productName" class="form-control" placeholder="e.g. Royal Maroon Silk Saree, Classic Navy Suit" required>
                     </div>
+
+                    <div class="grid-2 mb-3">
+                        <div class="form-group">
+                            <label class="form-label">Category <span style="color:var(--error)">*</span></label>
+                            <select id="productCategory" class="form-control" onchange="onCategorySelect(this.value)" required>
+                                <option value="">Loading categories...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Clothing / Sizing System <span style="color:var(--error)">*</span></label>
+                            <select id="productSizeType" class="form-control" onchange="onSizeTypeChange(this.value)" required>
+                                <option value="">Select Sizing System...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Category-Based Sizing & Stock Configuration -->
+                    <div class="config-card mb-3" id="sizingConfigCard">
+                        <div class="d-flex justify-between align-center mb-2">
+                            <strong style="color:var(--primary-dark); font-size:1rem;">Available Sizes & Stock Management</strong>
+                            <small class="text-muted">Set inventory per size option</small>
+                        </div>
+                        <div id="sizingConfigBody">
+                            <p class="text-muted" style="font-size:0.88rem; margin:0;">Please select a Clothing / Sizing System above to configure available rental sizes.</p>
+                        </div>
+                    </div>
+
                     <div class="form-group mb-3">
-                        <label>Category</label>
-                        <select class="form-control" required>
-                            <option value="">Select...</option>
-                            <option value="Sarees">Sarees</option>
-                            <option value="Suits">Suits</option>
-                            <option value="Bridal">Bridal</option>
-                            <option value="Dresses">Dresses</option>
-                        </select>
+                        <label class="form-label">Garment Measurement & Fit Notes (Optional)</label>
+                        <textarea id="customMeasurementNotes" class="form-control" rows="2" placeholder="e.g. Blouse includes 2-inch alteration margins; saree comes with petticoat; jacket is slim-cut."></textarea>
                     </div>
+
+                    <div class="grid-2 mb-3">
+                        <div class="form-group">
+                            <label class="form-label">Rental Price per Day (Rs.) <span style="color:var(--error)">*</span></label>
+                            <input type="number" id="price" class="form-control" placeholder="e.g. 2500" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Refundable Security Deposit (Rs.)</label>
+                            <input type="number" id="deposit" class="form-control" placeholder="e.g. 1000" min="0" value="1000">
+                        </div>
+                    </div>
+
                     <div class="form-group mb-3">
-                        <label>Rental Price per Day (Rs.)</label>
-                        <input type="number" id="price" class="form-control" required>
+                        <label class="form-label">Product Image URL / Sample Path</label>
+                        <input type="text" id="imagePath" class="form-control" placeholder="e.g. images/saree_royal_red.png, images/suit_classic_black.png" value="images/saree_royal_red.png">
+                        <small class="text-muted">Enter image path relative to web root or paste image URL.</small>
                     </div>
-                    <div class="form-group mb-3">
-                        <label>Product Image</label>
-                        <input type="file" class="form-control" accept="image/*">
-                    </div>
+
                     <div class="form-group mb-4">
-                        <label>Description</label>
-                        <textarea class="form-control" rows="4"></textarea>
+                        <label class="form-label">Product Description</label>
+                        <textarea id="description" class="form-control" rows="3" placeholder="Describe the fabric, occasion suitability, craftsmanship, and styling recommendations."></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width:100%">Add Product</button>
+
+                    <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%; padding:12px; font-size:1rem;">Save & Publish Product</button>
                 </form>
             </div>
         </div>
     </section>
 
     <script src="js/script.js"></script>
+    <script>
+        let sizeTypesList = [];
+        let categoriesList = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await checkVendorAuth();
+            await loadFormData();
+        });
+
+        async function checkVendorAuth() {
+            try {
+                const session = await api("me");
+                if (!session.user || (session.user.role !== "vendor" && session.user.role !== "admin")) {
+                    alert("Please log in as a vendor to manage products.");
+                    window.location.href = "vendor-login.html";
+                }
+            } catch(e) {}
+        }
+
+        async function loadFormData() {
+            // Load categories
+            try {
+                const catRes = await api("categories");
+                if (catRes.success) {
+                    categoriesList = catRes.categories;
+                    const catSelect = document.getElementById("productCategory");
+                    catSelect.innerHTML = '<option value="">Select Category...</option>' + 
+                        catRes.categories.map(c => `<option value="${c.category_id}">${escapeHtml(c.category_name)}</option>`).join("");
+                }
+            } catch(e) {}
+
+            // Load size types
+            try {
+                const stRes = await api("size-types");
+                if (stRes.success) {
+                    sizeTypesList = stRes.size_types;
+                    const stSelect = document.getElementById("productSizeType");
+                    stSelect.innerHTML = '<option value="">Select Clothing Sizing Type...</option>' + 
+                        stRes.size_types.map(st => `<option value="${st.size_type_id}" data-code="${st.type_code}">${escapeHtml(st.type_name)} (${st.category_group})</option>`).join("");
+                }
+            } catch(e) {}
+        }
+
+        function onCategorySelect(catId) {
+            const cat = categoriesList.find(c => String(c.category_id) === String(catId));
+            if (!cat) return;
+            const name = (cat.category_name || "").toLowerCase();
+            const stSelect = document.getElementById("productSizeType");
+
+            let matchedCode = "";
+            if (name.includes("saree") || name.includes("osari")) matchedCode = "saree_osari";
+            else if (name.includes("suit")) matchedCode = "mens_suit";
+            else if (name.includes("dress") || name.includes("bridal")) matchedCode = "womens_dress";
+            else if (name.includes("traditional")) matchedCode = "traditional_sri_lankan";
+            else if (name.includes("kids")) matchedCode = "kids_clothing";
+
+            if (matchedCode) {
+                const opt = Array.from(stSelect.options).find(o => o.dataset.code === matchedCode);
+                if (opt) {
+                    stSelect.value = opt.value;
+                    onSizeTypeChange(opt.value);
+                }
+            }
+        }
+
+        function onSizeTypeChange(typeId) {
+            const container = document.getElementById("sizingConfigBody");
+            if (!typeId) {
+                container.innerHTML = `<p class="text-muted" style="font-size:0.88rem; margin:0;">Please select a Clothing / Sizing System above to configure available sizes.</p>`;
+                return;
+            }
+
+            const st = sizeTypesList.find(s => String(s.size_type_id) === String(typeId));
+            const code = st ? st.type_code : "";
+
+            if (code === "saree_osari") {
+                container.innerHTML = `
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:4px;">Saree Length (Metres):</label>
+                        <input type="text" id="cfgSareeLength" class="form-control" value="5.8 metres" style="max-width:200px;">
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px;">Available Blouse Options:</label>
+                        <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:0.88rem;">
+                            <label><input type="checkbox" id="blouseOptReady" checked> Ready-made Blouse</label>
+                            <label><input type="checkbox" id="blouseOptPiece" checked> Blouse Piece Only</label>
+                            <label><input type="checkbox" id="blouseOptNone" checked> Without Blouse</label>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:6px;">Ready-made Blouse Bust Sizes in Stock:</label>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; font-size:0.85rem;">
+                            ${['32','34','36','38','40','42','44'].map(b => `
+                                <label style="background:var(--white); border:1px solid var(--border); padding:4px 8px; border-radius:4px;">
+                                    <input type="checkbox" name="sareeBustCheck" value="${b}" checked> ${b}"
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:4px;">Total Saree Rental Units (Stock): <span style="color:var(--error)">*</span></label>
+                        <input type="number" id="cfgSareeStock" class="form-control" value="3" min="1" style="max-width:140px;" required>
+                    </div>
+                `;
+            } else if (code === "mens_suit") {
+                const chestSizes = [
+                    { chest: '36', eu: '46' },
+                    { chest: '38', eu: '48' },
+                    { chest: '40', eu: '50' },
+                    { chest: '42', eu: '52' },
+                    { chest: '44', eu: '54' },
+                    { chest: '46', eu: '56' },
+                    { chest: '48', eu: '58' }
+                ];
+                container.innerHTML = `
+                    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Select which chest sizes you have in stock and enter the number of units available:</p>
+                    <table class="size-grid-table mb-3">
+                        <thead>
+                            <tr><th>Enable</th><th>Chest (UK/US)</th><th>EU Size</th><th>Units in Stock</th></tr>
+                        </thead>
+                        <tbody>
+                            ${chestSizes.map(item => `
+                                <tr>
+                                    <td><input type="checkbox" class="suit-enable" data-chest="${item.chest}" data-eu="${item.eu}" checked></td>
+                                    <td><strong>${item.chest}" Chest</strong></td>
+                                    <td>EU ${item.eu}</td>
+                                    <td><input type="number" class="form-control stock-input suit-stock" data-chest="${item.chest}" value="1" min="0"></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="grid-2">
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Jacket Lengths Supported:</label>
+                            <small class="text-muted" style="display:block; margin-bottom:4px;">Short (&lt;5'8"), Regular (5'8"-6'0"), Long (&gt;6'0")</small>
+                            <input type="text" id="cfgSuitJacketLengths" class="form-control" value="Short, Regular, Long">
+                        </div>
+                        <div>
+                            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Available Trouser Waist Sizes:</label>
+                            <small class="text-muted" style="display:block; margin-bottom:4px;">Comma-separated inches</small>
+                            <input type="text" id="cfgSuitTrouserWaists" class="form-control" value="30, 32, 34, 36, 38, 40">
+                        </div>
+                    </div>
+                `;
+            } else if (code === "womens_dress") {
+                const dressSizes = [
+                    { uk: '6',  us: '2',  eu: '34' },
+                    { uk: '8',  us: '4',  eu: '36' },
+                    { uk: '10', us: '6',  eu: '38' },
+                    { uk: '12', us: '8',  eu: '40' },
+                    { uk: '14', us: '10', eu: '42' },
+                    { uk: '16', us: '12', eu: '44' },
+                    { uk: '18', us: '14', eu: '46' },
+                    { uk: '20', us: '16', eu: '48' }
+                ];
+                container.innerHTML = `
+                    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Select which UK dress sizes you have in stock and set available units:</p>
+                    <table class="size-grid-table">
+                        <thead>
+                            <tr><th>Enable</th><th>UK Dress Size</th><th>US / EU Equivalent</th><th>Units in Stock</th></tr>
+                        </thead>
+                        <tbody>
+                            ${dressSizes.map(item => `
+                                <tr>
+                                    <td><input type="checkbox" class="dress-enable" data-uk="${item.uk}" data-us="${item.us}" data-eu="${item.eu}" ${['8','10','12'].includes(item.uk) ? 'checked' : ''}></td>
+                                    <td><strong>UK ${item.uk}</strong></td>
+                                    <td>US ${item.us} &middot; EU ${item.eu}</td>
+                                    <td><input type="number" class="form-control stock-input dress-stock" data-uk="${item.uk}" value="${['8','10','12'].includes(item.uk) ? '1' : '0'}" min="0"></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else if (code === "kids_clothing") {
+                const kidsAges = ['2–3 Years', '4–5 Years', '6–7 Years', '8–9 Years', '10–11 Years', '12–13 Years', '14–15 Years'];
+                container.innerHTML = `
+                    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Select available age groups and units:</p>
+                    <table class="size-grid-table">
+                        <thead>
+                            <tr><th>Enable</th><th>Age Group</th><th>Units in Stock</th></tr>
+                        </thead>
+                        <tbody>
+                            ${kidsAges.map(age => `
+                                <tr>
+                                    <td><input type="checkbox" class="kids-enable" data-age="${age}" checked></td>
+                                    <td><strong>${age}</strong></td>
+                                    <td><input type="number" class="form-control stock-input kids-stock" data-age="${age}" value="1" min="0"></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                // Traditional Sri Lankan
+                container.innerHTML = `
+                    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Select available sizing options and units:</p>
+                    <table class="size-grid-table">
+                        <thead>
+                            <tr><th>Enable</th><th>Option Label</th><th>Units in Stock</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="checkbox" class="trad-enable" data-label="Free Size (Adjustable Wrap)" checked></td>
+                                <td><strong>Free Size (Adjustable Wrap)</strong></td>
+                                <td><input type="number" class="form-control stock-input trad-stock" data-label="Free Size (Adjustable Wrap)" value="2" min="0"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" class="trad-enable" data-label="Standard (Chest 38-40)" checked></td>
+                                <td><strong>Standard (Chest 38-40")</strong></td>
+                                <td><input type="number" class="form-control stock-input trad-stock" data-label="Standard (Chest 38-40)" value="1" min="0"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" class="trad-enable" data-label="Large (Chest 42-44)" checked></td>
+                                <td><strong>Large (Chest 42-44")</strong></td>
+                                <td><input type="number" class="form-control stock-input trad-stock" data-label="Large (Chest 42-44)" value="1" min="0"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+            }
+        }
+
+        async function handleVendorAddProduct(event) {
+            event.preventDefault();
+            const alertBox = document.getElementById("formAlert");
+            const submitBtn = document.getElementById("submitBtn");
+            alertBox.style.display = "none";
+
+            const name = document.getElementById("productName").value.trim();
+            const categoryId = parseInt(document.getElementById("productCategory").value, 10);
+            const sizeTypeId = parseInt(document.getElementById("productSizeType").value, 10) || null;
+            const price = parseFloat(document.getElementById("price").value);
+            const deposit = parseFloat(document.getElementById("deposit").value) || 0;
+            const imagePath = document.getElementById("imagePath").value.trim();
+            const description = document.getElementById("description").value.trim();
+            const customNotes = document.getElementById("customMeasurementNotes").value.trim();
+
+            if (!name || !categoryId || !price) {
+                showAlert("Please complete all required fields.", true);
+                return;
+            }
+
+            // Build variants based on selected size type
+            const st = sizeTypesList.find(s => s.size_type_id === sizeTypeId);
+            const code = st ? st.type_code : "";
+            let variants = [];
+            let totalStock = 0;
+
+            if (code === "saree_osari") {
+                totalStock = parseInt(document.getElementById("cfgSareeStock")?.value, 10) || 1;
+                const sareeLen = document.getElementById("cfgSareeLength")?.value.trim() || "5.8m";
+                const busts = Array.from(document.querySelectorAll("input[name='sareeBustCheck']:checked")).map(el => el.value);
+                const blouseOpts = [];
+                if (document.getElementById("blouseOptReady")?.checked) blouseOpts.push("ready_made");
+                if (document.getElementById("blouseOptPiece")?.checked) blouseOpts.push("piece_only");
+                if (document.getElementById("blouseOptNone")?.checked) blouseOpts.push("no_blouse");
+
+                variants.push({
+                    variant_label: `Free Size (${sareeLen})`,
+                    stock: totalStock,
+                    custom_measurements: {
+                        saree_length: sareeLen,
+                        blouse_options: blouseOpts,
+                        ready_made_busts: busts
+                    }
+                });
+            } else if (code === "mens_suit") {
+                document.querySelectorAll(".suit-enable:checked").forEach(cb => {
+                    const chest = cb.dataset.chest;
+                    const eu = cb.dataset.eu;
+                    const stockInput = document.querySelector(`.suit-stock[data-chest='${chest}']`);
+                    const stockVal = parseInt(stockInput?.value, 10) || 0;
+                    if (stockVal > 0) {
+                        totalStock += stockVal;
+                        variants.push({
+                            variant_label: `Chest ${chest}" (EU ${eu}) / Regular`,
+                            stock: stockVal,
+                            custom_measurements: {
+                                chest: chest,
+                                eu: eu,
+                                jacket_lengths: ["Short", "Regular", "Long"],
+                                trouser_waists: ["30", "32", "34", "36", "38", "40"]
+                            }
+                        });
+                    }
+                });
+            } else if (code === "womens_dress") {
+                document.querySelectorAll(".dress-enable:checked").forEach(cb => {
+                    const uk = cb.dataset.uk;
+                    const us = cb.dataset.us;
+                    const eu = cb.dataset.eu;
+                    const stockInput = document.querySelector(`.dress-stock[data-uk='${uk}']`);
+                    const stockVal = parseInt(stockInput?.value, 10) || 0;
+                    if (stockVal > 0) {
+                        totalStock += stockVal;
+                        variants.push({
+                            variant_label: `UK ${uk} (US ${us} / EU ${eu})`,
+                            stock: stockVal,
+                            custom_measurements: { uk: uk, us: us, eu: eu }
+                        });
+                    }
+                });
+            } else if (code === "kids_clothing") {
+                document.querySelectorAll(".kids-enable:checked").forEach(cb => {
+                    const age = cb.dataset.age;
+                    const stockInput = document.querySelector(`.kids-stock[data-age='${age}']`);
+                    const stockVal = parseInt(stockInput?.value, 10) || 0;
+                    if (stockVal > 0) {
+                        totalStock += stockVal;
+                        variants.push({
+                            variant_label: `Kids ${age}`,
+                            stock: stockVal
+                        });
+                    }
+                });
+            } else {
+                document.querySelectorAll(".trad-enable:checked").forEach(cb => {
+                    const lbl = cb.dataset.label;
+                    const stockInput = document.querySelector(`.trad-stock[data-label='${lbl}']`);
+                    const stockVal = parseInt(stockInput?.value, 10) || 0;
+                    if (stockVal > 0) {
+                        totalStock += stockVal;
+                        variants.push({
+                            variant_label: lbl,
+                            stock: stockVal
+                        });
+                    }
+                });
+            }
+
+            if (totalStock <= 0) totalStock = 1;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Publishing...";
+
+            try {
+                // Get current vendor's shop
+                const shopsRes = await api("shops");
+                const session = await api("me");
+                let shopId = 1;
+                if (shopsRes.success && shopsRes.shops.length > 0) {
+                    shopId = shopsRes.shops[0].shop_id;
+                }
+
+                const payload = {
+                    shop_id: shopId,
+                    category_id: categoryId,
+                    size_type_id: sizeTypeId,
+                    product_name: name,
+                    description: description,
+                    price_per_day: price,
+                    deposit_amount: deposit,
+                    stock: totalStock,
+                    image_path: imagePath || "images/logo.svg",
+                    custom_measurement_notes: customNotes,
+                    variants: variants
+                };
+
+                const res = await api("products", {
+                    method: "POST",
+                    body: payload
+                });
+
+                if (res.success) {
+                    showAlert("Product created successfully with sizing configuration!", false);
+                    setTimeout(() => {
+                        window.location.href = "vendor-products.html";
+                    }, 1200);
+                } else {
+                    showAlert(res.message || "Failed to create product.", true);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Save & Publish Product";
+                }
+            } catch (err) {
+                showAlert("Could not connect to the server. Is WAMP running?", true);
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Save & Publish Product";
+            }
+        }
+
+        function showAlert(msg, isError) {
+            const el = document.getElementById("formAlert");
+            el.textContent = msg;
+            el.style.display = "block";
+            el.style.background = isError ? "#fdeded" : "#eef8f1";
+            el.style.color = isError ? "var(--error)" : "#1e7238";
+            el.style.border = `1px solid ${isError ? "#f5c6cb" : "#c3e6cb"}`;
+        }
+    </script>
 </body>
 </html>

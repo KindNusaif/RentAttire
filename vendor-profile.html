@@ -3,67 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rent Attire | Vendor Profile</title>
+    <title>Rent Attire | Vendor Shop Profile</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body style="background:var(--background);">
     <header>
         <div class="container navbar">
-            <a href="vendor-dashboard.html" class="logo">
-                <img src="images/logo.svg" alt="Rent Attire logo" width="30" height="30">
-                Rent Attire
-            </a>
+            <a href="vendor-dashboard.html" class="logo"><img src="images/logo.svg" alt="" width="30" height="30">Rent Attire</a>
             <nav class="nav-links">
                 <a href="vendor-dashboard.html">Dashboard</a>
                 <a href="vendor-products.html">My Products</a>
                 <a href="vendor-orders.html">Orders</a>
-                <a href="vendor-profile.html" style="color:var(--gold);">Profile</a>
+                <a href="vendor-profile.html">Profile</a>
             </nav>
-            <div class="nav-icons">
-                <a href="index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">View Store</a>
-                <a href="index.html" style="margin-left: 10px;">Logout</a>
-            </div>
+            <div class="nav-icons"><a href="index.html">View Store</a><a href="#" data-signout>Sign out</a></div>
         </div>
     </header>
-
     <section class="section">
-        <div class="container" style="max-width:600px;">
-            <h1 class="mb-4">Shop Profile</h1>
-            <div class="card p-4">
-                <form>
+        <div class="container" style="max-width:760px;">
+            <h1 class="mb-4">Vendor and Shop Profile</h1>
+            <div class="card p-4 mb-4">
+                <form id="vendorShopForm">
+                    <div class="form-group mb-3">
+                        <label for="vendorShopSelect">Shop</label>
+                        <select id="vendorShopSelect" class="form-control"></select>
+                    </div>
+                    <p id="shopStatus" class="text-muted" role="status"></p>
                     <div class="text-center mb-4">
-                        <img src="images/logo.svg" width="80" alt="Shop Logo" style="border-radius:50%; background:#f9f9f9; padding:10px; margin-bottom:10px;">
-                        <div>
-                            <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size:12px;">Change Logo</button>
-                        </div>
+                        <img id="shopLogoPreview" src="images/logo.svg" width="80" alt="Shop logo" style="border-radius:50%;background:#f9f9f9;padding:10px;margin-bottom:10px;">
+                        <div><label class="btn btn-outline" for="shopLogoUpload">Change logo</label><input id="shopLogoUpload" type="file" accept="image/jpeg,image/png,image/webp" hidden></div>
                     </div>
-                    
-                    <div class="form-group mb-3">
-                        <label>Shop Name</label>
-                        <input type="text" class="form-control" value="Colombo Silk House">
+                    <div class="form-group mb-3"><label for="shopName">Shop name</label><input id="shopName" class="form-control" data-shop-field required maxlength="150"></div>
+                    <div class="form-group mb-3"><label for="ownerName">Owner name</label><input id="ownerName" class="form-control" required maxlength="160"></div>
+                    <div class="grid-2 mb-3">
+                        <div class="form-group"><label for="ownerPhone">Owner phone</label><input id="ownerPhone" class="form-control" maxlength="30"></div>
+                        <div class="form-group"><label for="shopPhone">Shop contact number</label><input id="shopPhone" class="form-control" data-shop-field maxlength="30"></div>
                     </div>
-                    <div class="form-group mb-3">
-                        <label>Owner Name</label>
-                        <input type="text" class="form-control" value="Jane Doe">
+                    <div class="form-group mb-3"><label for="shopEmail">Shop contact email</label><input id="shopEmail" class="form-control" data-shop-field type="email" maxlength="190"></div>
+                    <div class="form-group mb-3"><label for="shopAddress">Shop address / location</label><input id="shopAddress" class="form-control" data-shop-field maxlength="255"></div>
+                    <div class="form-group mb-4"><label for="shopDescription">About the shop</label><textarea id="shopDescription" class="form-control" data-shop-field rows="4" maxlength="3000"></textarea></div>
+                    <div class="d-flex" style="gap:12px;flex-wrap:wrap;">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="button" id="vendorShopActivate" class="btn btn-outline">Deactivate Shop</button>
                     </div>
-                    <div class="form-group mb-3">
-                        <label>Contact Number</label>
-                        <input type="text" class="form-control" value="077 123 4567">
+                </form>
+            </div>
+            <div class="card p-4">
+                <h2 class="mb-3">Create another shop</h2>
+                <form id="vendorNewShopForm">
+                    <div class="form-group mb-3"><label for="newShopName">Shop name</label><input id="newShopName" class="form-control" required maxlength="150"></div>
+                    <div class="grid-2 mb-3">
+                        <div class="form-group"><label for="newShopEmail">Contact email</label><input id="newShopEmail" class="form-control" type="email" maxlength="190"></div>
+                        <div class="form-group"><label for="newShopPhone">Contact phone</label><input id="newShopPhone" class="form-control" maxlength="30"></div>
                     </div>
-                    <div class="form-group mb-3">
-                        <label>City / Location</label>
-                        <input type="text" class="form-control" value="Colombo">
-                    </div>
-                    <div class="form-group mb-4">
-                        <label>About Shop (Description)</label>
-                        <textarea class="form-control" rows="4">Premium traditional attire and bridal wear located in the heart of Colombo.</textarea>
-                    </div>
-                    <button type="button" class="btn btn-primary" style="width:100%" onclick="alert('Profile Updated! (Demo)')">Save Changes</button>
+                    <div class="form-group mb-3"><label for="newShopAddress">Address</label><input id="newShopAddress" class="form-control" maxlength="255"></div>
+                    <div class="form-group mb-3"><label for="newShopDescription">Description</label><textarea id="newShopDescription" class="form-control" rows="3" maxlength="3000"></textarea></div>
+                    <button class="btn btn-outline" type="submit">Submit shop for approval</button>
                 </form>
             </div>
         </div>
     </section>
-
     <script src="js/script.js"></script>
 </body>
 </html>

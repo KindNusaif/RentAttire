@@ -11,7 +11,7 @@
         <div class="container navbar">
             <a href="vendor-dashboard.html" class="logo">
                 <img src="images/logo.svg" alt="Rent Attire logo" width="30" height="30">
-                Rent Attire
+                Rent Attire Vendor
             </a>
             <nav class="nav-links">
                 <a href="vendor-dashboard.html">Dashboard</a>
@@ -21,7 +21,7 @@
             </nav>
             <div class="nav-icons">
                 <a href="index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">View Store</a>
-                <a href="index.html" style="margin-left: 10px;">Logout</a>
+                <a href="#" data-signout style="margin-left: 10px;">Logout</a>
             </div>
         </div>
     </header>
@@ -29,16 +29,96 @@
     <section class="section">
         <div class="container">
             <div class="d-flex justify-between align-center mb-4">
-                <h1>My Products</h1>
-                <a href="vendor-add-product.html" class="btn btn-primary">Add New Product</a>
+                <div>
+                    <h1>My Rental Products</h1>
+                    <p class="text-muted" style="margin:0;">Manage your active clothing inventory and sizing configurations.</p>
+                </div>
+                <a href="vendor-add-product.html" class="btn btn-primary">+ Add New Product</a>
             </div>
             
-            <div id="vendorProductsGrid" class="grid-3">
-                <!-- populated by js -->
+            <div id="vendorProductsContainer" class="grid-3">
+                <p class="text-muted">Loading your products...</p>
             </div>
         </div>
     </section>
 
     <script src="js/script.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadVendorProducts();
+        });
+
+        async function loadVendorProducts() {
+            const container = document.getElementById("vendorProductsContainer");
+            if (!container) return;
+
+            try {
+                const session = await api("me");
+                if (!session.user || (session.user.role !== "vendor" && session.user.role !== "admin")) {
+                    container.innerHTML = `<p class="text-muted">Please <a href="vendor-login.html" style="color:var(--primary);">log in as a vendor</a> to view your products.</p>`;
+                    return;
+                }
+
+                const res = await api("products", {}, "&manage=1");
+                const products = (res.success && res.products) ? res.products : [];
+
+                if (products.length === 0) {
+                    container.innerHTML = `
+                        <div style="grid-column:1/-1; text-align:center; padding:40px 20px; background:var(--white); border-radius:8px;">
+                            <h3 class="mb-2">No products added yet</h3>
+                            <p class="text-muted mb-4">Add your sarees, suits, gowns, and traditional wear with custom sizes.</p>
+                            <a href="vendor-add-product.html" class="btn btn-primary">Add Your First Product</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = products.map(p => {
+                    const stock = Number(p.stock);
+                    const availability = stock === 0 ? "Unavailable" : (stock <= 2 ? "Limited" : "Available");
+                    const badgeClass = availability === "Available" ? "badge-available" : (availability === "Limited" ? "badge-limited" : "badge-unavailable");
+                    const sizeTypeBadge = p.size_type_name || "Standard";
+
+                    return `
+                    <div class="card" id="productCard-${p.product_id}">
+                        <div class="card-img" style="aspect-ratio:3/4; overflow:hidden;">
+                            <img src="${escapeHtml(p.image_path || 'images/logo.svg')}" alt="${escapeHtml(p.product_name)}" style="width:100%; height:100%; object-fit:cover;">
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-between align-center mb-2">
+                                <span class="badge ${badgeClass}">${availability} (${stock} in stock)</span>
+                                <span style="font-size:11px; background:var(--cream); padding:3px 7px; border-radius:4px; font-weight:600; color:var(--primary-dark);">${escapeHtml(sizeTypeBadge)}</span>
+                            </div>
+                            <p style="font-size:12px; color:var(--muted); margin-bottom:4px;">${escapeHtml(p.category_name || '')}</p>
+                            <h3 class="card-title" style="margin-bottom:8px;">${escapeHtml(p.product_name)}</h3>
+                            <div class="price mb-3">Rs. ${Number(p.price_per_day).toLocaleString()} / day</div>
+                            <div class="d-flex" style="gap:10px;">
+                                <a href="product-details.html?id=${p.product_id}" class="btn btn-outline" style="flex:1; padding:8px; text-align:center; font-size:0.85rem;">View</a>
+                                <button onclick="deleteProduct(${p.product_id})" class="btn btn-outline" style="flex:1; padding:8px; border-color:var(--error); color:var(--error); font-size:0.85rem;">Remove</button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join("");
+            } catch (err) {
+                container.innerHTML = `<p class="text-muted">Could not load products. Is WAMP running?</p>`;
+            }
+        }
+
+        async function deleteProduct(productId) {
+            if (!confirm("Are you sure you want to remove this product?")) return;
+            try {
+                const res = await api("products", { method: "DELETE" }, "&id=" + productId);
+                if (res.success) {
+                    alert("Product removed successfully.");
+                    const card = document.getElementById("productCard-" + productId);
+                    if (card) card.remove();
+                } else {
+                    alert(res.message || "Failed to remove product.");
+                }
+            } catch(e) {
+                alert("Could not reach the server.");
+            }
+        }
+    </script>
 </body>
 </html>

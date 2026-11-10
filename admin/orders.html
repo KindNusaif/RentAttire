@@ -20,7 +20,7 @@
             </nav>
             <div class="nav-icons">
                 <a href="../index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">Visit Site</a>
-                <a href="login.html" style="margin-left: 10px;">Logout</a>
+                <a href="../index.html" data-signout style="margin-left: 10px;">Sign out</a>
             </div>
         </div>
     </header>
@@ -33,39 +33,14 @@
                     <thead>
                         <tr style="background: #f9f9f9; border-bottom: 2px solid #eee;">
                             <th style="padding: 12px;">Order ID</th>
-                            <th style="padding: 12px;">Shop</th>
                             <th style="padding: 12px;">Customer</th>
-                            <th style="padding: 12px;">Amount</th>
-                            <th style="padding: 12px;">Platform Fee (10%)</th>
+                            <th style="padding: 12px;">Rental total</th>
+                            <th style="padding: 12px;">Deposit</th>
+                            <th style="padding: 12px;">Grand total</th>
                             <th style="padding: 12px;">Status</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">RA1001</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Colombo Silk House</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">John Doe</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Rs. 7,500</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee; color:var(--primary); font-weight:bold;">Rs. 750</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span class="badge badge-available">Completed</span></td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">RA1002</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Kandy Formal Wear</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Peter Parker</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Rs. 9,000</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee; color:var(--primary); font-weight:bold;">Rs. 900</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span class="badge badge-limited">Ready for Pickup</span></td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">RA1003</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Colombo Silk House</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Jane Smith</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Rs. 25,000</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee; color:var(--primary); font-weight:bold;">Rs. 2,500</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span class="badge badge-limited">Preparing Attire</span></td>
-                        </tr>
-                    </tbody>
+                    <tbody id="adminOrdersBody"><tr><td colspan="6">Loading…</td></tr></tbody>
                 </table>
             </div>
         </div>

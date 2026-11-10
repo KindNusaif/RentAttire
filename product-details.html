@@ -18,6 +18,71 @@
         .product-thumbnail.active {
             border-color: var(--gold);
         }
+        .size-subheading {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text);
+            margin: 0 0 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .size-subheading small {
+            font-size: 0.8rem;
+            color: var(--muted);
+            font-weight: normal;
+        }
+        .size-options-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .size-option-btn {
+            min-width: 52px;
+            min-height: 44px;
+            padding: 8px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--white);
+            color: var(--text);
+            font: 600 0.95rem var(--font-body);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+        .size-option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+        }
+        .size-option-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: var(--white);
+        }
+        .size-option-btn:disabled {
+            border-color: #eee;
+            background: #fafafa;
+            color: #bbb;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+        .size-pill-radio {
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .size-pill-radio:hover {
+            border-color: var(--primary);
+        }
+        .size-pill-radio.active {
+            border-color: var(--primary);
+            background: var(--cream);
+        }
+        .spec-box {
+            background: var(--cream);
+            padding: 12px 14px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border-left: 3px solid var(--gold);
+            font-size: 0.88rem;
+        }
     </style>
 </head>
 <body>
@@ -59,10 +124,10 @@
                 <!-- Left Side: Images -->
                 <div>
                     <div style="border-radius:8px; overflow:hidden; margin-bottom:16px; box-shadow:var(--shadow); background:linear-gradient(160deg, var(--cream), #F1DCD0);">
-                        <img id="mainImage" src="images/saree_royal_red.png" alt="Product image" style="width:100%; aspect-ratio:3/4; object-fit:cover;">
+                        <img id="mainImage" src="images/logo.svg" alt="Product image" style="width:100%; aspect-ratio:3/4; object-fit:cover;">
                     </div>
                     <div id="productGallery" style="display:flex; gap:10px;">
-                        <!-- Product thumbnails are rendered from the selected item's photos. -->
+                        <!-- Product thumbnails are rendered dynamically -->
                     </div>
                 </div>
 
@@ -74,21 +139,30 @@
                     <div id="productPrice" class="price" style="font-size:24px;">Rs. 0 / day</div>
                     
                     <p id="productDescription" class="mb-4 text-muted">Product details are loading.</p>
+
+                    <!-- Vendor garment measurement notes if any -->
+                    <div id="customNotesBox" class="spec-box mb-4" style="display:none;">
+                        <strong style="color:var(--primary-dark); display:block; margin-bottom:3px;">Garment Fit & Notes:</strong>
+                        <span id="customNotesText"></span>
+                    </div>
                     
-                    <div class="size-selection">
-                        <h3 class="size-selection-title">Select Size</h3>
-                        <div class="size-selection-toolbar">
-                            <label for="sizeStandardSelect">Size standard</label>
-                            <select id="sizeStandardSelect" class="form-control size-standard-select" onchange="selectSizeStandard(this.value)">
-                                <option value="US" selected>US</option>
-                                <option value="UK">UK</option>
-                                <option value="EU">EU</option>
-                            </select>
-                            <button type="button" class="size-guide-link" onclick="openSizeGuide()">Size guide</button>
+                    <!-- Dynamic Category-Based Sizing Section -->
+                    <div class="size-selection" id="sizeSelectionSection">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <h3 class="size-selection-title" id="sizeSelectionHeading" style="margin:0;">Select Size</h3>
+                            <button type="button" class="size-guide-link" onclick="openSizeGuide()" style="padding:0; margin:0; display:inline-flex; align-items:center; gap:5px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                Size Guide
+                            </button>
                         </div>
-                        <div id="sizeOptions" class="size-options-grid" role="group" aria-label="Available sizes"></div>
+
+                        <!-- Sizing options are injected based on clothing type -->
+                        <div id="dynamicSizeContainer">
+                            <p class="text-muted">Loading size options...</p>
+                        </div>
+                        
                         <p id="selectedSizeDisplay" class="selected-size-text" aria-live="polite">Selected: None</p>
-                        <p id="sizeSelectionError" class="size-selection-error" role="alert" hidden>Please select a size</p>
+                        <p id="sizeSelectionError" class="size-selection-error" role="alert" hidden>Please select your clothing size / measurements.</p>
                     </div>
                     
                     <div class="grid-2 mb-4">
@@ -121,28 +195,15 @@
         </div>
     </section>
 
+    <!-- Dynamic Size Guide Modal -->
     <div id="sizeGuideModal" class="size-guide-modal" role="dialog" aria-modal="true" aria-labelledby="sizeGuideTitle" tabindex="-1" hidden onclick="handleSizeGuideBackdrop(event)">
-        <div class="size-guide-dialog">
+        <div class="size-guide-dialog" style="width:min(100%, 640px);">
             <div class="size-guide-header">
-                <h2 id="sizeGuideTitle">Size guide</h2>
+                <h2 id="sizeGuideTitle">Clothing Size Guide</h2>
                 <button type="button" class="size-guide-close" aria-label="Close size guide" onclick="closeSizeGuide()">&times;</button>
             </div>
-            <p class="size-guide-description">Approximate clothing size conversions.</p>
-            <div class="size-guide-table-wrap">
-                <table class="size-guide-table">
-                    <thead>
-                        <tr><th>US</th><th>UK</th><th>EU</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr><td>XS</td><td>4</td><td>32</td></tr>
-                        <tr><td>S</td><td>6</td><td>34</td></tr>
-                        <tr><td>M</td><td>8</td><td>36</td></tr>
-                        <tr><td>L</td><td>10</td><td>38</td></tr>
-                        <tr><td>XL</td><td>12</td><td>40</td></tr>
-                        <tr><td>2XL</td><td>14</td><td>42</td></tr>
-                        <tr><td>3XL</td><td>16</td><td>44</td></tr>
-                    </tbody>
-                </table>
+            <div id="sizeGuideBody" style="margin-top:14px;">
+                <!-- Populated dynamically based on product sizing type -->
             </div>
             <button type="button" class="btn btn-primary size-guide-done" onclick="closeSizeGuide()">Close</button>
         </div>
@@ -152,142 +213,716 @@
     <footer style="background: var(--primary-dark); padding: 48px 0; margin-top: 96px;">
         <div class="container text-center">
             <p style="color: var(--white); font-size: 1.1rem;">&copy; 2026 Rent Attire. All Rights Reserved.</p>
-            <p style="color: var(--gold); font-size: 0.9rem; margin-top: 8px;">Elevating Fashion Through Sustainable Luxury</p>
+            <p style="color: var(--gold); font-size: 0.9rem; margin-top: 8px;">Elevating Fashion Through Sustainable Luxury in Sri Lanka</p>
         </div>
     </footer>
 
     <script src="js/script.js"></script>
     <script>
-        const baseSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
-        const sizeConversions = {
-            XS: { US: 'XS', UK: '4', EU: '32' },
-            S: { US: 'S', UK: '6', EU: '34' },
-            M: { US: 'M', UK: '8', EU: '36' },
-            L: { US: 'L', UK: '10', EU: '38' },
-            XL: { US: 'XL', UK: '12', EU: '40' },
-            '2XL': { US: '2XL', UK: '14', EU: '42' },
-            '3XL': { US: '3XL', UK: '16', EU: '44' }
-        };
+        // State for dynamic size selection
+        let currentProductData = null;
+        let selectedSizeString = "";
+        let selectedVariantId = null;
 
-        let currentStandard = 'US';
-        let selectedSize = null;
-        let selectedBaseSize = null;
-        let productSizes = null;
+        // Suit state
+        let suitChest = null;
+        let suitEu = null;
+        let suitFit = "Regular";
+        let suitWaist = null;
+        let suitTLength = "Regular (32\")";
 
-        function populateProductSizes(sizes) {
-            if (Array.isArray(sizes)) {
-                productSizes = sizes;
-            } else if (typeof sizes === 'string') {
-                try {
-                    const parsedSizes = JSON.parse(sizes);
-                    productSizes = Array.isArray(parsedSizes) ? parsedSizes : sizes.split(',');
-                } catch (error) {
-                    productSizes = sizes.split(',');
-                }
-            } else {
-                productSizes = [];
+        // Saree state
+        let sareeBlouseOption = "ready_made";
+        let sareeBust = null;
+
+        // Dress state
+        let dressUk = null;
+        let dressUs = null;
+        let dressEu = null;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await renderProductDetails();
+            if (window.currentProduct) {
+                currentProductData = window.currentProduct;
+                initDynamicSizing(currentProductData);
             }
-            productSizes = productSizes.map(size => String(size).trim().toUpperCase()).filter(Boolean);
-            updateSizeOptions();
-        }
+        });
 
-        function selectSizeStandard(standard) {
-            if (!['US', 'UK', 'EU'].includes(standard)) return;
-            currentStandard = standard;
-            document.getElementById('sizeStandardSelect').value = standard;
-            updateSizeOptions();
-        }
-
-        function updateSizeOptions() {
-            const container = document.getElementById('sizeOptions');
+        function initDynamicSizing(product) {
+            const container = document.getElementById("dynamicSizeContainer");
             if (!container) return;
-            const availableSizes = new Set(productSizes || []);
-            container.innerHTML = baseSizes.map(size => {
-                const inStock = availableSizes.has(size);
-                const label = sizeConversions[size][currentStandard];
-                const isSelected = selectedBaseSize === size;
-                return `<button type="button" class="size-option-btn${isSelected ? ' selected' : ''}" data-size="${size}" onclick="selectSize('${size}')"${inStock ? '' : ' disabled'} aria-pressed="${isSelected}" aria-label="${inStock ? label : `${label}, unavailable`}">${label}</button>`;
-            }).join('');
-            selectedSize = selectedBaseSize && availableSizes.has(selectedBaseSize)
-                ? `${currentStandard} ${sizeConversions[selectedBaseSize][currentStandard]}`
-                : null;
-            if (!selectedSize) selectedBaseSize = null;
-            updateSelectedSizeDisplay();
+
+            // Show custom notes if present
+            if (product.customNotes) {
+                const notesBox = document.getElementById("customNotesBox");
+                const notesText = document.getElementById("customNotesText");
+                if (notesBox && notesText) {
+                    notesText.textContent = product.customNotes;
+                    notesBox.style.display = "block";
+                }
+            }
+
+            const code = (product.sizeTypeCode || "").toLowerCase();
+            const cat = (product.category || "").toLowerCase();
+
+            if (code === "saree_osari" || cat.includes("saree") || cat.includes("osari")) {
+                renderSareeSizing(product, container);
+            } else if (code === "mens_suit" || cat.includes("suit") || cat.includes("blazer")) {
+                renderSuitSizing(product, container);
+            } else if (code === "womens_dress" || cat.includes("dress") || cat.includes("bridal") || cat.includes("gown")) {
+                renderDressSizing(product, container);
+            } else if (code === "traditional_sri_lankan" || cat.includes("traditional")) {
+                renderTraditionalSizing(product, container);
+            } else if (code === "kids_clothing" || cat.includes("kids") || cat.includes("teen")) {
+                renderKidsSizing(product, container);
+            } else {
+                renderGenericSizing(product, container);
+            }
+
+            setupSizeGuideModal(product);
         }
 
-        function selectSize(size) {
-            if (!baseSizes.includes(size) || !(productSizes || []).includes(size)) return;
-            selectedBaseSize = size;
-            selectedSize = `${currentStandard} ${sizeConversions[size][currentStandard]}`;
-            document.querySelectorAll('.size-option-btn').forEach(button => {
-                const isSelected = button.dataset.size === size;
-                button.classList.toggle('selected', isSelected);
-                button.setAttribute('aria-pressed', String(isSelected));
+        /* ----------------------------------------------------
+           1. SAREE & KANDYAN OSARI
+           ---------------------------------------------------- */
+        function renderSareeSizing(product, container) {
+            let sareeLength = "5.8 metres";
+            const busts = ["32", "34", "36", "38", "40", "42", "44"];
+
+            if (product.variants && product.variants.length > 0) {
+                selectedVariantId = product.variants[0].variant_id;
+                try {
+                    const cm = typeof product.variants[0].custom_measurements === "string" 
+                        ? JSON.parse(product.variants[0].custom_measurements) 
+                        : product.variants[0].custom_measurements;
+                    if (cm && cm.saree_length) sareeLength = cm.saree_length;
+                } catch(e) {}
+            }
+
+            container.innerHTML = `
+                <div style="background:var(--cream); padding:12px 14px; border-radius:6px; margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:bold; color:var(--primary-dark);">Saree / Osari Size:</span>
+                        <span class="badge badge-available">Free Size (${escapeHtml(sareeLength)})</span>
+                    </div>
+                    <p style="font-size:12px; color:var(--muted); margin:4px 0 0;">Fits all standard silhouettes with traditional pleating and draping.</p>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <div class="size-subheading">
+                        <span>Blouse Requirement: <span style="color:var(--error)">*</span></span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr; gap:8px;">
+                        <label class="size-pill-radio active" id="radioReadyMade" style="display:flex; align-items:center; gap:10px; padding:10px 14px; border:1px solid var(--primary); border-radius:6px; cursor:pointer; background:var(--white);">
+                            <input type="radio" name="blouseOption" value="ready_made" onchange="onSareeBlouseChange(this.value)" checked>
+                            <div>
+                                <strong style="display:block; font-size:13.5px;">Ready-made Stitched Blouse</strong>
+                                <span style="font-size:12px; color:var(--muted);">Select your bust measurement below.</span>
+                            </div>
+                        </label>
+                        <label class="size-pill-radio" id="radioPieceOnly" style="display:flex; align-items:center; gap:10px; padding:10px 14px; border:1px solid var(--border); border-radius:6px; cursor:pointer; background:var(--white);">
+                            <input type="radio" name="blouseOption" value="piece_only" onchange="onSareeBlouseChange(this.value)">
+                            <div>
+                                <strong style="display:block; font-size:13.5px;">Blouse Piece Only</strong>
+                                <span style="font-size:12px; color:var(--muted);">Unstitched matching fabric included for custom tailoring.</span>
+                            </div>
+                        </label>
+                        <label class="size-pill-radio" id="radioNoBlouse" style="display:flex; align-items:center; gap:10px; padding:10px 14px; border:1px solid var(--border); border-radius:6px; cursor:pointer; background:var(--white);">
+                            <input type="radio" name="blouseOption" value="no_blouse" onchange="onSareeBlouseChange(this.value)">
+                            <div>
+                                <strong style="display:block; font-size:13.5px;">Without Blouse</strong>
+                                <span style="font-size:12px; color:var(--muted);">Saree only (pair with your own blouse).</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="readyMadeBustSection" style="margin-bottom:16px;">
+                    <div class="size-subheading">
+                        <span>Ready-made Blouse Bust (Inches): <span style="color:var(--error)">*</span></span>
+                        <small>Around fullest part of bust</small>
+                    </div>
+                    <div class="size-options-grid" id="blouseBustGrid">
+                        ${busts.map(b => `
+                            <button type="button" class="size-option-btn saree-bust-btn" data-bust="${b}" onclick="selectSareeBust('${b}')">
+                                ${b}"
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            updateSareeSelection();
+        }
+
+        function onSareeBlouseChange(val) {
+            sareeBlouseOption = val;
+            document.querySelectorAll(".size-pill-radio").forEach(el => el.classList.remove("active"));
+            if (val === "ready_made") {
+                document.getElementById("radioReadyMade")?.classList.add("active");
+                document.getElementById("readyMadeBustSection").style.display = "block";
+            } else if (val === "piece_only") {
+                document.getElementById("radioPieceOnly")?.classList.add("active");
+                document.getElementById("readyMadeBustSection").style.display = "none";
+            } else {
+                document.getElementById("radioNoBlouse")?.classList.add("active");
+                document.getElementById("readyMadeBustSection").style.display = "none";
+            }
+            updateSareeSelection();
+        }
+
+        function selectSareeBust(b) {
+            sareeBust = b;
+            document.querySelectorAll(".saree-bust-btn").forEach(btn => {
+                btn.classList.toggle("selected", btn.dataset.bust === b);
             });
-            document.getElementById('sizeSelectionError').hidden = true;
-            updateSelectedSizeDisplay();
+            updateSareeSelection();
         }
 
-        function updateSelectedSizeDisplay() {
-            const display = document.getElementById('selectedSizeDisplay');
-            if (display) display.textContent = `Selected: ${selectedSize || 'None'}`;
+        function updateSareeSelection() {
+            if (sareeBlouseOption === "ready_made") {
+                if (sareeBust) {
+                    selectedSizeString = `Free Size / Ready-made Blouse (Bust ${sareeBust}")`;
+                    clearSizeError();
+                } else {
+                    selectedSizeString = "";
+                }
+            } else if (sareeBlouseOption === "piece_only") {
+                selectedSizeString = "Free Size / Blouse Piece Only (Unstitched)";
+                clearSizeError();
+            } else {
+                selectedSizeString = "Free Size / Without Blouse";
+                clearSizeError();
+            }
+            updateSelectedDisplay();
+        }
+
+        /* ----------------------------------------------------
+           2. MEN'S SUITS
+           ---------------------------------------------------- */
+        function renderSuitSizing(product, container) {
+            const chestOptions = [
+                { chest: "36", eu: "46" },
+                { chest: "38", eu: "48" },
+                { chest: "40", eu: "50" },
+                { chest: "42", eu: "52" },
+                { chest: "44", eu: "54" },
+                { chest: "46", eu: "56" },
+                { chest: "48", eu: "58" }
+            ];
+
+            const stockMap = {};
+            const variantMap = {};
+            if (product.variants && product.variants.length > 0) {
+                product.variants.forEach(v => {
+                    const m = (v.display_label || v.variant_label || "").match(/(\d{2})/);
+                    if (m) {
+                        stockMap[m[1]] = Number(v.stock);
+                        variantMap[m[1]] = v.variant_id;
+                    }
+                });
+            }
+
+            container.innerHTML = `
+                <div style="margin-bottom:16px;">
+                    <div class="size-subheading">
+                        <span>1. Jacket Chest Size: <span style="color:var(--error)">*</span></span>
+                        <small>UK/US (Inches) &middot; EU Size</small>
+                    </div>
+                    <div class="size-options-grid" id="suitChestGrid">
+                        ${chestOptions.map(item => {
+                            const inStock = stockMap[item.chest] === undefined || stockMap[item.chest] > 0;
+                            const vId = variantMap[item.chest] || "";
+                            return `
+                            <button type="button" class="size-option-btn suit-chest-btn" data-chest="${item.chest}" data-eu="${item.eu}" data-variant-id="${vId}" onclick="selectSuitChest('${item.chest}', '${item.eu}', '${vId}')" ${inStock ? '' : 'disabled title="Out of stock"'}>
+                                <span style="font-weight:bold; font-size:13.5px;">${item.chest}"</span>
+                                <span style="font-size:10.5px; display:block; opacity:0.8;">EU ${item.eu}</span>
+                            </button>`;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <div class="size-subheading">
+                        <span>2. Jacket Length / Fit: <span style="color:var(--error)">*</span></span>
+                        <small>Based on height</small>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button type="button" class="size-option-btn suit-fit-btn" data-fit="Short" onclick="selectSuitFit('Short')" style="flex:1;">Short (&lt; 5'8")</button>
+                        <button type="button" class="size-option-btn suit-fit-btn selected" data-fit="Regular" onclick="selectSuitFit('Regular')" style="flex:1;">Regular (5'8"-6'0")</button>
+                        <button type="button" class="size-option-btn suit-fit-btn" data-fit="Long" onclick="selectSuitFit('Long')" style="flex:1;">Long (&gt; 6'0")</button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <div class="size-subheading">
+                        <span>3. Trouser Waist (Inches): <span style="color:var(--error)">*</span></span>
+                        <small>Waist circumference</small>
+                    </div>
+                    <div class="size-options-grid" id="suitWaistGrid">
+                        ${['30','32','34','36','38','40','42','44'].map(w => `
+                            <button type="button" class="size-option-btn suit-waist-btn" data-waist="${w}" onclick="selectSuitWaist('${w}')">${w}"</button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <div class="size-subheading">
+                        <span>4. Trouser Inseam / Length: <span style="color:var(--error)">*</span></span>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button type="button" class="size-option-btn suit-tlen-btn" data-len="Short (30\')" onclick="selectSuitTLength('Short (30\')')" style="flex:1;">Short (30")</button>
+                        <button type="button" class="size-option-btn suit-tlen-btn selected" data-len="Regular (32\')" onclick="selectSuitTLength('Regular (32\')')" style="flex:1;">Regular (32")</button>
+                        <button type="button" class="size-option-btn suit-tlen-btn" data-len="Long (34\')" onclick="selectSuitTLength('Long (34\')')" style="flex:1;">Long (34")</button>
+                    </div>
+                </div>
+            `;
+            updateSuitSelection();
+        }
+
+        function selectSuitChest(chest, eu, vId) {
+            suitChest = chest;
+            suitEu = eu;
+            if (vId) selectedVariantId = Number(vId);
+            document.querySelectorAll(".suit-chest-btn").forEach(btn => {
+                btn.classList.toggle("selected", btn.dataset.chest === chest);
+            });
+            updateSuitSelection();
+        }
+
+        function selectSuitFit(fit) {
+            suitFit = fit;
+            document.querySelectorAll(".suit-fit-btn").forEach(btn => {
+                btn.classList.toggle("selected", btn.dataset.fit === fit);
+            });
+            updateSuitSelection();
+        }
+
+        function selectSuitWaist(w) {
+            suitWaist = w;
+            document.querySelectorAll(".suit-waist-btn").forEach(btn => {
+                btn.classList.toggle("selected", btn.dataset.waist === w);
+            });
+            updateSuitSelection();
+        }
+
+        function selectSuitTLength(l) {
+            suitTLength = l;
+            document.querySelectorAll(".suit-tlen-btn").forEach(btn => {
+                btn.classList.toggle("selected", btn.dataset.len === l);
+            });
+            updateSuitSelection();
+        }
+
+        function updateSuitSelection() {
+            if (suitChest && suitWaist) {
+                selectedSizeString = `Chest ${suitChest}" (EU ${suitEu}) / ${suitFit} / Trouser Waist ${suitWaist}", Length ${suitTLength}`;
+                clearSizeError();
+            } else {
+                selectedSizeString = "";
+            }
+            updateSelectedDisplay();
+        }
+
+        /* ----------------------------------------------------
+           3. WOMEN'S DRESSES & BRIDAL GOWNS
+           ---------------------------------------------------- */
+        function renderDressSizing(product, container) {
+            const dressSizes = [
+                { uk: "6",  us: "2",  eu: "34", bust: 31, waist: 24, hips: 34 },
+                { uk: "8",  us: "4",  eu: "36", bust: 33, waist: 26, hips: 36 },
+                { uk: "10", us: "6",  eu: "38", bust: 35, waist: 28, hips: 38 },
+                { uk: "12", us: "8",  eu: "40", bust: 37, waist: 30, hips: 40 },
+                { uk: "14", us: "10", eu: "42", bust: 39, waist: 32, hips: 42 },
+                { uk: "16", us: "12", eu: "44", bust: 41, waist: 34, hips: 44 },
+                { uk: "18", us: "14", eu: "46", bust: 43, waist: 36, hips: 46 },
+                { uk: "20", us: "16", eu: "48", bust: 45, waist: 38, hips: 48 }
+            ];
+
+            const stockMap = {};
+            const variantMap = {};
+            if (product.variants && product.variants.length > 0) {
+                product.variants.forEach(v => {
+                    const m = (v.uk_size || v.display_label || v.variant_label || "").match(/(\d+)/);
+                    if (m) {
+                        stockMap[m[1]] = Number(v.stock);
+                        variantMap[m[1]] = v.variant_id;
+                    }
+                });
+            }
+
+            container.innerHTML = `
+                <div style="margin-bottom:14px;">
+                    <div class="size-subheading">
+                        <span>Select UK Dress Size: <span style="color:var(--error)">*</span></span>
+                        <small>UK is primary in Sri Lanka &middot; US/EU conversions shown</small>
+                    </div>
+                    <div class="size-options-grid" id="dressSizeGrid">
+                        ${dressSizes.map(item => {
+                            const inStock = stockMap[item.uk] === undefined || stockMap[item.uk] > 0;
+                            const vId = variantMap[item.uk] || "";
+                            return `
+                            <button type="button" class="size-option-btn dress-size-btn" data-uk="${item.uk}" data-us="${item.us}" data-eu="${item.eu}" data-bust="${item.bust}" data-waist="${item.waist}" data-hips="${item.hips}" data-variant-id="${vId}" onclick="selectDressSize('${item.uk}', '${item.us}', '${item.eu}', ${item.bust}, ${item.waist}, ${item.hips}, '${vId}')" ${inStock ? '' : 'disabled title="Out of stock"'}>
+                                <span style="font-weight:bold; font-size:14px;">UK ${item.uk}</span>
+                                <span style="font-size:10.5px; display:block; opacity:0.8;">US ${item.us} &middot; EU ${item.eu}</span>
+                            </button>`;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <div id="dressSpecCard" class="spec-box" style="display:none; margin-bottom:14px;">
+                    <strong style="color:var(--primary-dark); display:block; margin-bottom:4px;">Garment Measurements for Selected Size:</strong>
+                    <div style="font-size:12.5px; display:flex; gap:16px; flex-wrap:wrap; color:var(--text);">
+                        <span>Bust: <b id="dressSpecBust">-</b>"</span>
+                        <span>Waist: <b id="dressSpecWaist">-</b>"</span>
+                        <span>Hips: <b id="dressSpecHips">-</b>"</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectDressSize(uk, us, eu, bust, waist, hips, vId) {
+            dressUk = uk; dressUs = us; dressEu = eu;
+            if (vId) selectedVariantId = Number(vId);
+
+            document.querySelectorAll(".dress-size-btn").forEach(btn => {
+                btn.classList.toggle("selected", btn.dataset.uk === uk);
+            });
+
+            const card = document.getElementById("dressSpecCard");
+            if (card) {
+                document.getElementById("dressSpecBust").textContent = bust;
+                document.getElementById("dressSpecWaist").textContent = waist;
+                document.getElementById("dressSpecHips").textContent = hips;
+                card.style.display = "block";
+            }
+
+            selectedSizeString = `UK ${uk} (US ${us} / EU ${eu}) - Bust ${bust}", Waist ${waist}", Hips ${hips}"`;
+            clearSizeError();
+            updateSelectedDisplay();
+        }
+
+        /* ----------------------------------------------------
+           4. TRADITIONAL SRI LANKAN ATTIRE
+           ---------------------------------------------------- */
+        function renderTraditionalSizing(product, container) {
+            const name = (product.name || "").toLowerCase();
+            const isSarong = name.includes("sarong");
+            const isNational = name.includes("national") || name.includes("arya");
+            const isLama = name.includes("lama");
+
+            if (isSarong) {
+                container.innerHTML = `
+                    <div style="margin-bottom:16px;">
+                        <div class="size-subheading">
+                            <span>Sarong Waist Size: <span style="color:var(--error)">*</span></span>
+                            <small>Traditional wrap / drawstring</small>
+                        </div>
+                        <div class="size-options-grid">
+                            <button type="button" class="size-option-btn trad-btn selected" onclick="selectTradOption('Free Size (Wrap / Drawstring) / Length 42\\"')" style="flex:1;">Free Size (Wrap / Drawstring)</button>
+                            ${['32"','34"','36"','38"','40"','42"'].map(w => `
+                                <button type="button" class="size-option-btn trad-btn" onclick="selectTradOption('Waist ${w} / Length 42\\"')">${w}</button>
+                            `).join('')}
+                        </div>
+                        <span style="font-size:12px; color:var(--muted); display:block; margin-top:6px;">Standard traditional drop length: 42"–44" (107–112 cm).</span>
+                    </div>
+                `;
+                selectTradOption('Free Size (Wrap / Drawstring) / Length 42"');
+            } else if (isNational) {
+                container.innerHTML = `
+                    <div style="margin-bottom:16px;">
+                        <div class="size-subheading">
+                            <span>National Dress Shirt Chest: <span style="color:var(--error)">*</span></span>
+                            <small>Arya Sinhala formal standard</small>
+                        </div>
+                        <div class="size-options-grid">
+                            ${['38"','40"','42"','44"','46"'].map(c => `
+                                <button type="button" class="size-option-btn trad-btn" onclick="selectTradOption('National Dress Chest ${c} / Sarong Free Size')">${c}</button>
+                            `).join('')}
+                        </div>
+                        <span style="font-size:12px; color:var(--muted); display:block; margin-top:6px;">Includes full tailored national shirt and matching white ceremonial sarong.</span>
+                    </div>
+                `;
+            } else if (isLama) {
+                container.innerHTML = `
+                    <div style="margin-bottom:16px;">
+                        <div class="size-subheading">
+                            <span>Lama Saree Size: <span style="color:var(--error)">*</span></span>
+                            <small>Traditional girls' attire</small>
+                        </div>
+                        <div class="size-options-grid">
+                            <button type="button" class="size-option-btn trad-btn" onclick="selectTradOption('Age 4–6 Yrs (Chest 24\\", Skirt 26\\")')">Age 4–6 (Chest 24")</button>
+                            <button type="button" class="size-option-btn trad-btn" onclick="selectTradOption('Age 7–9 Yrs (Chest 26\\", Skirt 28\\")')">Age 7–9 (Chest 26")</button>
+                            <button type="button" class="size-option-btn trad-btn" onclick="selectTradOption('Age 10–12 Yrs (Chest 28\\", Skirt 30\\")')">Age 10–12 (Chest 28")</button>
+                            <button type="button" class="size-option-btn trad-btn" onclick="selectTradOption('Age 13–15 Yrs (Chest 30\\", Skirt 32\\")')">Age 13–15 (Chest 30")</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                renderSareeSizing(product, container);
+            }
+        }
+
+        function selectTradOption(label) {
+            selectedSizeString = label;
+            document.querySelectorAll(".trad-btn").forEach(btn => {
+                btn.classList.toggle("selected", btn.textContent.includes(label.split('/')[0].trim()));
+            });
+            clearSizeError();
+            updateSelectedDisplay();
+        }
+
+        /* ----------------------------------------------------
+           5. KIDS & CHILDREN'S CLOTHING
+           ---------------------------------------------------- */
+        function renderKidsSizing(product, container) {
+            const kidsAges = [
+                { age: "2–3 Years",   h: 98,  chest: 21, waist: 20 },
+                { age: "4–5 Years",   h: 110, chest: 23, waist: 22 },
+                { age: "6–7 Years",   h: 122, chest: 25, waist: 23 },
+                { age: "8–9 Years",   h: 134, chest: 27, waist: 24 },
+                { age: "10–11 Years", h: 146, chest: 29, waist: 26 },
+                { age: "12–13 Years", h: 158, chest: 31, waist: 27 },
+                { age: "14–15 Years", h: 164, chest: 33, waist: 28 }
+            ];
+
+            container.innerHTML = `
+                <div style="margin-bottom:14px;">
+                    <div class="size-subheading">
+                        <span>Select Child Age Group: <span style="color:var(--error)">*</span></span>
+                        <small>Age & approx. child height</small>
+                    </div>
+                    <div class="size-options-grid">
+                        ${kidsAges.map(item => `
+                            <button type="button" class="size-option-btn kids-btn" data-age="${item.age}" data-h="${item.h}" data-chest="${item.chest}" data-waist="${item.waist}" onclick="selectKidsAge('${item.age}', ${item.h}, ${item.chest}, ${item.waist})">
+                                <span style="font-weight:bold; font-size:13px;">${item.age}</span>
+                                <span style="font-size:10.5px; display:block; opacity:0.8;">~${item.h} cm</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <div id="kidsSpecCard" class="spec-box" style="display:none; margin-bottom:14px;">
+                    <strong style="color:var(--primary-dark); display:block; margin-bottom:4px;">Child Fit Details:</strong>
+                    <div style="font-size:12.5px; color:var(--text);">
+                        Height: <b id="kidsSpecH">-</b> cm &middot; Chest: <b id="kidsSpecChest">-</b>" &middot; Waist: <b id="kidsSpecWaist">-</b>"
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectKidsAge(age, h, chest, waist) {
+            document.querySelectorAll(".kids-btn").forEach(btn => {
+                btn.classList.toggle("selected", btn.dataset.age === age);
+            });
+            const card = document.getElementById("kidsSpecCard");
+            if (card) {
+                document.getElementById("kidsSpecH").textContent = h;
+                document.getElementById("kidsSpecChest").textContent = chest;
+                document.getElementById("kidsSpecWaist").textContent = waist;
+                card.style.display = "block";
+            }
+            selectedSizeString = `Kids ${age} (Height ~${h} cm, Chest ${chest}", Waist ${waist}")`;
+            clearSizeError();
+            updateSelectedDisplay();
+        }
+
+        /* ----------------------------------------------------
+           6. GENERIC FALLBACK
+           ---------------------------------------------------- */
+        function renderGenericSizing(product, container) {
+            const sizes = product.sizes && product.sizes.length ? product.sizes : ["Free Size"];
+            container.innerHTML = `
+                <div style="margin-bottom:14px;">
+                    <div class="size-subheading"><span>Available Sizes: <span style="color:var(--error)">*</span></span></div>
+                    <div class="size-options-grid">
+                        ${sizes.map(s => `
+                            <button type="button" class="size-option-btn generic-btn" onclick="selectGenericSize('${escapeHtml(s)}')">${escapeHtml(s)}</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectGenericSize(s) {
+            selectedSizeString = s;
+            document.querySelectorAll(".generic-btn").forEach(btn => {
+                btn.classList.toggle("selected", btn.textContent.trim() === s);
+            });
+            clearSizeError();
+            updateSelectedDisplay();
+        }
+
+        function updateSelectedDisplay() {
+            const display = document.getElementById("selectedSizeDisplay");
+            if (display) {
+                display.textContent = "Selected: " + (selectedSizeString || "None");
+            }
+        }
+
+        function clearSizeError() {
+            const err = document.getElementById("sizeSelectionError");
+            if (err) err.hidden = true;
+        }
+
+        /* ----------------------------------------------------
+           DYNAMIC SIZE GUIDE MODAL POPULATION
+           ---------------------------------------------------- */
+        function setupSizeGuideModal(product) {
+            const title = document.getElementById("sizeGuideTitle");
+            const body = document.getElementById("sizeGuideBody");
+            if (!title || !body) return;
+
+            const code = (product.sizeTypeCode || "").toLowerCase();
+            const cat = (product.category || "").toLowerCase();
+
+            if (code === "saree_osari" || cat.includes("saree") || cat.includes("osari")) {
+                title.textContent = "Size Guide: Sarees & Kandyan Osari";
+                body.innerHTML = `
+                    <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Sarees and Kandyan Osaris are naturally free-size garments draped with pleats and a shoulder pallu.</p>
+                    <div class="size-guide-table-wrap">
+                        <table class="size-guide-table" style="width:100%;">
+                            <thead>
+                                <tr><th>Component</th><th>Measurement</th><th>Fitting Guidance</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Standard Saree</td><td>5.5 – 6.3 metres</td><td>Generous length allowing traditional 5–7 front pleats</td></tr>
+                                <tr><td>Kandyan Osari</td><td>6.0 metres</td><td>Includes separate frill (Neriya) and shoulder pallu</td></tr>
+                                <tr><td>Ready-made Blouse</td><td>32" to 44" Bust</td><td>Select your exact bust size; tailored with 2" inner margins</td></tr>
+                                <tr><td>Blouse Piece Only</td><td>0.8 – 1.0 metre</td><td>Unstitched raw silk/cotton piece for custom tailoring</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (code === "mens_suit" || cat.includes("suit")) {
+                title.textContent = "Size Guide: Men's Suits & Formal Wear";
+                body.innerHTML = `
+                    <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Measurements in inches over a dress shirt. Sri Lanka standard uses UK/US chest sizes.</p>
+                    <div class="size-guide-table-wrap">
+                        <table class="size-guide-table" style="width:100%;">
+                            <thead>
+                                <tr><th>Chest (UK/US)</th><th>EU Size</th><th>Matching Trouser Waist</th><th>Recommended Height</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>36"</td><td>EU 46</td><td>30"</td><td>Short: &lt; 5'8"</td></tr>
+                                <tr><td>38"</td><td>EU 48</td><td>32"</td><td>Regular: 5'8"–6'0"</td></tr>
+                                <tr><td>40"</td><td>EU 50</td><td>34"</td><td>Regular: 5'8"–6'0"</td></tr>
+                                <tr><td>42"</td><td>EU 52</td><td>36"</td><td>Regular: 5'8"–6'0"</td></tr>
+                                <tr><td>44"</td><td>EU 54</td><td>38"</td><td>Long: &gt; 6'0"</td></tr>
+                                <tr><td>46"</td><td>EU 56</td><td>40"</td><td>Long: &gt; 6'0"</td></tr>
+                                <tr><td>48"</td><td>EU 58</td><td>42"</td><td>Long: &gt; 6'0"</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (code === "womens_dress" || cat.includes("dress") || cat.includes("bridal")) {
+                title.textContent = "Size Guide: Women's Dresses & Bridal Gowns";
+                body.innerHTML = `
+                    <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Primary UK sizing with international conversions and garment dimensions in inches & cm.</p>
+                    <div class="size-guide-table-wrap">
+                        <table class="size-guide-table" style="width:100%;">
+                            <thead>
+                                <tr><th>UK Size</th><th>US</th><th>EU</th><th>Bust</th><th>Waist</th><th>Hips</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>UK 6</td><td>2</td><td>34</td><td>31" (79 cm)</td><td>24" (61 cm)</td><td>34" (86 cm)</td></tr>
+                                <tr><td>UK 8</td><td>4</td><td>36</td><td>33" (84 cm)</td><td>26" (66 cm)</td><td>36" (91 cm)</td></tr>
+                                <tr><td>UK 10</td><td>6</td><td>38</td><td>35" (89 cm)</td><td>28" (71 cm)</td><td>38" (96 cm)</td></tr>
+                                <tr><td>UK 12</td><td>8</td><td>40</td><td>37" (94 cm)</td><td>30" (76 cm)</td><td>40" (101 cm)</td></tr>
+                                <tr><td>UK 14</td><td>10</td><td>42</td><td>39" (99 cm)</td><td>32" (81 cm)</td><td>42" (106 cm)</td></tr>
+                                <tr><td>UK 16</td><td>12</td><td>44</td><td>41" (104 cm)</td><td>34" (86 cm)</td><td>44" (112 cm)</td></tr>
+                                <tr><td>UK 18</td><td>14</td><td>46</td><td>43" (109 cm)</td><td>36" (91 cm)</td><td>46" (117 cm)</td></tr>
+                                <tr><td>UK 20</td><td>16</td><td>48</td><td>45" (114 cm)</td><td>38" (96 cm)</td><td>48" (122 cm)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (code === "kids_clothing" || cat.includes("kids")) {
+                title.textContent = "Size Guide: Children's Rental Clothing";
+                body.innerHTML = `
+                    <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Children's sizing based on age and height. If in between sizes, choosing the next size up is recommended.</p>
+                    <div class="size-guide-table-wrap">
+                        <table class="size-guide-table" style="width:100%;">
+                            <thead>
+                                <tr><th>Age Group</th><th>Child Height</th><th>Chest</th><th>Waist</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>2–3 Years</td><td>~98 cm</td><td>21" (53 cm)</td><td>20" (51 cm)</td></tr>
+                                <tr><td>4–5 Years</td><td>~110 cm</td><td>23" (58 cm)</td><td>22" (56 cm)</td></tr>
+                                <tr><td>6–7 Years</td><td>~122 cm</td><td>25" (64 cm)</td><td>23" (58 cm)</td></tr>
+                                <tr><td>8–9 Years</td><td>~134 cm</td><td>27" (69 cm)</td><td>24" (61 cm)</td></tr>
+                                <tr><td>10–11 Years</td><td>~146 cm</td><td>29" (74 cm)</td><td>26" (66 cm)</td></tr>
+                                <tr><td>12–13 Years</td><td>~158 cm</td><td>31" (79 cm)</td><td>27" (69 cm)</td></tr>
+                                <tr><td>14–15 Years</td><td>~164 cm</td><td>33" (84 cm)</td><td>28" (71 cm)</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                title.textContent = "Size Guide: Traditional Sri Lankan Attire";
+                body.innerHTML = `
+                    <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Guidelines for National Dress, Sarongs, and traditional ceremonial garments.</p>
+                    <div class="size-guide-table-wrap">
+                        <table class="size-guide-table" style="width:100%;">
+                            <thead>
+                                <tr><th>Attire Type</th><th>Available Sizing</th><th>Fitting Notes</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>National Dress (Arya Sinhala)</td><td>Chest 38" to 46"</td><td>Traditional knee-length tunic with mandarin collar</td></tr>
+                                <tr><td>Formal Silk Sarong</td><td>Free Size (Waist 30"–42")</td><td>Drawstring or wrap closure, length 42"–44"</td></tr>
+                                <tr><td>Lama Saree (Girls)</td><td>Ages 4 to 15</td><td>Traditional two-piece stitched blouse and skirt</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
         }
 
         function openSizeGuide() {
-            const modal = document.getElementById('sizeGuideModal');
-            modal.hidden = false;
-            modal.querySelector('.size-guide-close').focus();
-            document.addEventListener('keydown', handleSizeGuideKeydown);
+            const modal = document.getElementById("sizeGuideModal");
+            if (modal) modal.hidden = false;
         }
 
         function closeSizeGuide() {
-            const modal = document.getElementById('sizeGuideModal');
-            if (!modal || modal.hidden) return;
-            modal.hidden = true;
-            document.removeEventListener('keydown', handleSizeGuideKeydown);
-            document.querySelector('.size-guide-link').focus();
+            const modal = document.getElementById("sizeGuideModal");
+            if (modal) modal.hidden = true;
         }
 
         function handleSizeGuideBackdrop(event) {
             if (event.target === event.currentTarget) closeSizeGuide();
         }
 
-        function handleSizeGuideKeydown(event) {
-            if (event.key === 'Escape') closeSizeGuide();
-        }
-
-        function handleAddToCart() {
-            if (!window.currentProduct) {
-                alert("This item could not be found.");
+        async function handleAddToCart() {
+            if (!currentProductData) {
+                alert("Product details have not finished loading.");
                 return;
             }
 
-            if (!selectedSize) {
-                document.getElementById("sizeSelectionError").hidden = false;
-                document.getElementById("sizeSelectionError").scrollIntoView({ behavior: "smooth", block: "nearest" });
+            if (!selectedSizeString) {
+                const err = document.getElementById("sizeSelectionError");
+                if (err) {
+                    err.hidden = false;
+                    err.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }
                 return;
             }
 
-            const pickupDate = document.getElementById("pickupDate").value;
-            const returnDate = document.getElementById("returnDate").value;
-            const qty = parseInt(document.getElementById("qty").value, 10);
-            if (!pickupDate || !returnDate) {
-                alert("Please select both pickup and return dates.");
+            const pickup = document.getElementById("pickupDate").value;
+            const returnD = document.getElementById("returnDate").value;
+            const qty = parseInt(document.getElementById("qty").value, 10) || 1;
+
+            if (!pickup || !returnD) {
+                alert("Please select your rental pickup and return dates.");
                 return;
             }
 
             const calc = calculateRentalPrice();
             if (!calc || calc.days < 1) return;
 
-            const product = window.currentProduct;
-            product.size = selectedSize;
-            product.sizeStandard = currentStandard;
-            addToCart(product, qty, calc.days, pickupDate, returnDate);
-        }
+            currentProductData.size = selectedSizeString;
+            currentProductData.variantId = selectedVariantId;
 
-        document.addEventListener('DOMContentLoaded', function() {
-            updateSizeOptions();
-        });
+            await addToCart(currentProductData, qty, calc.days, pickup, returnD, selectedVariantId);
+        }
     </script>
 </body>
 </html>

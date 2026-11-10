@@ -3,16 +3,30 @@
    API HELPERS (used by every page)
    ========================================================== */
 const API = (window.location.pathname.includes("/admin/") ? "../" : "") + "backend/api/index.php";
+let csrfToken = "";
 
 async function api(action, options = {}, query = "") {
     const config = { credentials: "same-origin", headers: {} };
     if (options.method) config.method = options.method;
+    const formData = typeof FormData !== "undefined" && options.body instanceof FormData;
     if (options.body) {
         config.method = config.method || "POST";
-        config.headers["Content-Type"] = "application/json";
-        config.body = JSON.stringify(options.body);
+        if (formData) {
+            config.body = options.body;
+        } else {
+            config.headers["Content-Type"] = "application/json";
+            config.body = JSON.stringify(options.body);
+        }
+    }
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(config.method) && !["register", "vendor-register", "login"].includes(action)) {
+        if (!csrfToken) {
+            const tokenResponse = await fetch(API + "?action=csrf", { credentials: "same-origin" });
+            csrfToken = tokenResponse.headers.get("X-CSRF-Token") || "";
+        }
+        config.headers["X-CSRF-Token"] = csrfToken;
     }
     const response = await fetch(API + "?action=" + action + query, config);
+    csrfToken = response.headers.get("X-CSRF-Token") || csrfToken;
     return response.json();
 }
 
@@ -39,32 +53,40 @@ function statusBadge(status) {
     return '<span class="badge ' + info.badge + '">' + escapeHtml(info.label) + '</span>';
 }
 
+function mapProduct(p) {
+    const stock = Number(p.stock);
+    const images = Array.isArray(p.images) && p.images.length ? p.images : [p.image_path || "images/logo.svg"];
+    const sizes = Array.isArray(p.sizes) ? p.sizes : (p.sizes || "Free Size").split(",");
+    return {
+        id: p.product_id,
+        name: p.product_name,
+        category: p.category_name || "",
+        categoryId: p.category_id,
+        price: Number(p.price_per_day),
+        deposit: Number(p.deposit_amount),
+        stock: stock,
+        availability: stock === 0 ? "Unavailable" : (stock <= 2 ? "Limited" : "Available"),
+        description: p.description || "",
+        sizes: sizes.map(s => String(s).trim()).filter(Boolean),
+        variants: p.variants || [],
+        photos: images,
+        image: images[0] || "images/logo.svg",
+        shopId: p.shop_id,
+        shopName: p.shop_name || "Rent Attire Collection",
+        sizeTypeId: p.size_type_id || null,
+        sizeTypeCode: p.size_type_code || null,
+        sizeTypeName: p.size_type_name || null,
+        categoryGroup: p.category_group || null,
+        customNotes: p.custom_measurement_notes || "",
+        customMeasurementNotes: p.custom_measurement_notes || "",
+        status: p.status
+    };
+}
+
 async function loadProducts() {
-    try {
-        const result = await api("products");
-        if (!result.success) return [];
-        return result.products.map(p => {
-            const stock = Number(p.stock);
-            const image = p.image_path || "images/logo.svg";
-            return {
-                id: p.product_id,
-                name: p.product_name,
-                category: p.category_name || "",
-                price: Number(p.price_per_day),
-                deposit: Number(p.deposit_amount),
-                stock: stock,
-                availability: stock === 0 ? "Unavailable" : (stock <= 2 ? "Limited" : "Available"),
-                description: p.description || "",
-                sizes: (p.sizes || "XS,S,M,L,XL").split(",").map(s => s.trim()).filter(Boolean),
-                photos: [image],
-                image: image,
-                shopId: p.shop_id,
-                shopName: p.shop_name || "Rent Attire Collection"
-            };
-        });
-    } catch (error) {
-        return [];
-    }
+    const result = await api("products");
+    if (!result.success) throw new Error(result.message || "Could not load products.");
+    return result.products.map(mapProduct);
 }
 
 async function updateHeader() {
@@ -134,7 +156,7 @@ async function updateCartCount() {
    3) ADD TO CART
    Called from product-details.html once the dates have been
    validated and the rental price has been calculated.*/
-async function addToCart(product, qty, days, pickupDate, returnDate) {
+async function addToCart(product, qty, days, pickupDate, returnDate, variantId = null) {
     try {
         const session = await api("me");
         if (!session.user) {
@@ -145,6 +167,7 @@ async function addToCart(product, qty, days, pickupDate, returnDate) {
         const result = await api("cart", {
             body: {
                 product_id: product.id,
+                variant_id: variantId || product.variantId || null,
                 quantity: qty,
                 pickup_date: pickupDate,
                 return_date: returnDate,
@@ -602,8 +625,16 @@ async function renderProductDetails() {
     const notFound = document.getElementById("productNotFound");
     if (!detailLayout || !notFound) return;
 
-    const products = await loadProducts();
     const productId = new URLSearchParams(window.location.search).get("id");
+    let products;
+    try {
+        products = await loadProducts();
+    } catch (error) {
+        detailLayout.style.display = "none";
+        notFound.style.display = "block";
+        notFound.textContent = error.message;
+        return;
+    }
     const product = products.find(item => String(item.id) === String(productId));
     if (!product) {
         detailLayout.style.display = "none";
@@ -633,8 +664,11 @@ async function renderProductDetails() {
     mainImage.src = product.photos[0];
     mainImage.alt = product.name;
     gallery.innerHTML = product.photos.map((photo, index) => `
-        <img src="${photo}" alt="${product.name} photo ${index + 1}" class="product-thumbnail${index === 0 ? " active" : ""}" onclick="selectProductPhoto('${photo}', this)">
+        <img src="${escapeHtml(photo)}" alt="${escapeHtml(product.name)} photo ${index + 1}" data-photo="${escapeHtml(photo)}" class="product-thumbnail${index === 0 ? " active" : ""}">
     `).join("");
+    gallery.querySelectorAll(".product-thumbnail").forEach(thumbnail => {
+        thumbnail.addEventListener("click", () => selectProductPhoto(thumbnail.dataset.photo, thumbnail));
+    });
 
     window.currentProduct = product;
     if (typeof populateProductSizes === "function") populateProductSizes(product.sizes);
@@ -672,105 +706,180 @@ function wireProductCards() {
 
 function validateVendorRegisterForm(event) {
     event.preventDefault();
-    const shopName = document.getElementById("shopName")?.value.trim();
-    const ownerName = document.getElementById("ownerName")?.value.trim();
-    const email = document.getElementById("email")?.value.trim();
-    const password = document.getElementById("password")?.value;
-    
-    if (!shopName || !ownerName || !email || !password) {
-        alert("Please fill in all required fields.");
-        return false;
-    }
-    alert("Vendor Account created successfully! Please sign in.");
-    window.location.href = "vendor-login.html";
+    const form = event.currentTarget;
+    const body = {
+        shop_name: document.getElementById("shopName").value.trim(),
+        owner_name: document.getElementById("ownerName").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone")?.value.trim() || "",
+        shop_email: document.getElementById("shopEmail")?.value.trim() || "",
+        address: document.getElementById("address")?.value.trim() || "",
+        description: document.getElementById("description")?.value.trim() || "",
+        password: document.getElementById("password").value
+    };
+    api("vendor-register", { body }).then(result => {
+        setPageMessage(form, result.message || "Vendor application submitted.", !result.success);
+        if (result.success) form.reset();
+    }).catch(() => setPageMessage(form, "Could not reach the server. Check that WAMP is running.", true));
     return false;
 }
 
 function validateVendorLoginForm(event) {
     event.preventDefault();
-    alert("Vendor Login successful! (Demo)");
-    window.location.href = "vendor-dashboard.html";
+    const form = event.currentTarget;
+    api("login", { body: {
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value
+    }}).then(async result => {
+        if (!result.success) {
+            setPageMessage(form, result.message, true);
+            return;
+        }
+        if (result.user.role !== "vendor") {
+            await api("logout", { method: "POST" });
+            setPageMessage(form, "This portal is for vendors only.", true);
+            return;
+        }
+        window.location.href = "vendor-dashboard.html";
+    }).catch(() => setPageMessage(form, "Could not reach the server. Check that WAMP is running.", true));
     return false;
 }
 
 function validateAddProductForm(event) {
     event.preventDefault();
-    const name = document.getElementById("productName")?.value.trim();
-    const price = document.getElementById("price")?.value.trim();
-    
-    if (!name || !price) {
-        alert("Please fill in at least the product name and price.");
-        return false;
-    }
-    alert("Product added successfully! (Demo)");
-    window.location.href = "vendor-products.html";
+    const form = event.currentTarget;
+    saveVendorProduct(form).catch(error => setPageMessage(form, error.message, true));
     return false;
 }
 
-function renderVendorProducts() {
+function setPageMessage(container, message, isError = false) {
+    let node = container.querySelector("[data-form-message]");
+    if (!node) {
+        node = document.createElement("p");
+        node.dataset.formMessage = "";
+        node.setAttribute("role", "status");
+        container.appendChild(node);
+    }
+    node.textContent = message;
+    node.style.color = isError ? "var(--error)" : "var(--success)";
+}
+
+async function loadVendorProducts() {
+    const result = await api("products", {}, "&manage=1");
+    if (!result.success) throw new Error(result.message || "Could not load products.");
+    return result.products.map(mapProduct);
+}
+
+async function renderVendorDashboard() {
+    const heading = document.getElementById("vendorWelcome");
+    if (!heading) return;
+    const [session, result] = await Promise.all([api("me"), api("vendor-dashboard")]);
+    if (!session.user || session.user.role !== "vendor") {
+        window.location.href = "vendor-login.html";
+        return;
+    }
+    if (!result.success) {
+        setPageMessage(document.querySelector(".container"), result.message || "Could not load the dashboard.", true);
+        return;
+    }
+    const dashboard = result.dashboard;
+    heading.textContent = `Welcome back, ${session.user.name}`;
+    document.getElementById("vendorEarnings").textContent = "Rs. " + Number(dashboard.earnings).toLocaleString();
+    document.getElementById("vendorOrdersCount").textContent = dashboard.total_orders;
+    document.getElementById("vendorProductsCount").textContent = dashboard.total_products;
+    document.getElementById("vendorPendingCount").textContent = dashboard.pending_requests;
+    document.getElementById("vendorActiveCount").textContent = dashboard.active_rentals;
+    const approvalNotice = document.getElementById("vendorApprovalNotice");
+    if (approvalNotice) {
+        const pending = dashboard.vendor_status !== "active" || result.shops.some(shop => shop.status !== "approved");
+        approvalNotice.hidden = !pending;
+        approvalNotice.textContent = dashboard.vendor_status === "suspended"
+            ? "Your vendor account is suspended. Contact an administrator for assistance."
+            : "Your shop is awaiting admin approval. You can set up products, but they will not be published until approval.";
+    }
+    const recent = document.getElementById("vendorRecentOrders");
+    if (recent) {
+        recent.innerHTML = result.recent_orders.length ? result.recent_orders.map(order => `
+            <tr><td>${escapeHtml(orderCode(order.order_id))}</td><td>${escapeHtml(order.product_name)}</td>
+            <td>${escapeHtml(order.first_name)} ${escapeHtml(order.last_name)}</td>
+            <td>${escapeHtml(order.pickup_date)} – ${escapeHtml(order.return_date)}</td>
+            <td>${statusBadge(order.vendor_status)}</td></tr>`).join("") : '<tr><td colspan="5">No rental requests yet.</td></tr>';
+    }
+}
+
+async function renderVendorProducts() {
     const container = document.getElementById("vendorProductsGrid");
     if (!container) return;
-    
-    let html = '';
-    mockProducts.filter(p => p.shopId === 1).forEach(p => {
-        let badgeClass = p.availability === 'Available' ? 'badge-available' : (p.availability === 'Limited' ? 'badge-limited' : 'badge-unavailable');
-        html += `
-        <div class="card">
-            <div class="card-img"><img src="${p.image}" alt="${p.name}"></div>
-            <div class="card-body">
-                <span class="badge ${badgeClass} mb-2">${p.availability}</span>
-                <h3 class="card-title">${p.name}</h3>
-                <div class="price">Rs. ${p.price} / day</div>
-                <div class="d-flex" style="gap: 10px;">
-                    <button class="btn btn-outline" style="flex:1; padding: 8px;">Edit</button>
-                    <button class="btn btn-outline" style="flex:1; padding: 8px; border-color:var(--error); color:var(--error);">Remove</button>
+    try {
+        const products = await loadVendorProducts();
+        container.innerHTML = products.length ? products.map(product => `
+            <div class="card">
+                <div class="card-img"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}"></div>
+                <div class="card-body">
+                    ${statusBadge(product.status)}
+                    <p class="text-muted">${escapeHtml(product.shopName)} · ${escapeHtml(product.category)}</p>
+                    <h3 class="card-title">${escapeHtml(product.name)}</h3>
+                    <div class="price">Rs. ${product.price.toLocaleString()} / day</div>
+                    <p class="text-muted">Stock: ${product.stock} · Sizes: ${escapeHtml(product.sizes.join(", ") || "Not set")}</p>
+                    <div class="d-flex" style="gap:10px;">
+                        <a class="btn btn-outline" style="flex:1;" href="vendor-add-product.html?id=${encodeURIComponent(product.id)}">Edit</a>
+                        <button class="btn btn-outline" style="flex:1; border-color:var(--error); color:var(--error);" onclick="deleteVendorProduct(${Number(product.id)})">Delete</button>
+                    </div>
+                    <a class="btn btn-outline mt-3" style="width:100%;" href="vendor-add-product.html?id=${encodeURIComponent(product.id)}#availability">Manage unavailable dates</a>
                 </div>
-            </div>
-        </div>`;
-    });
-    container.innerHTML = html;
+            </div>`).join("") : '<p>You have not added any products yet.</p>';
+    } catch (error) {
+        container.innerHTML = `<p role="alert">${escapeHtml(error.message)}</p>`;
+    }
 }
 
-function renderVendorOrders() {
+async function deleteVendorProduct(productId) {
+    if (!window.confirm("Delete this product? Products with rental history will be archived instead.")) return;
+    const result = await api("products", { method: "DELETE" }, "&id=" + encodeURIComponent(productId));
+    if (!result.success) {
+        alert(result.message || "Could not delete the product.");
+        return;
+    }
+    renderVendorProducts();
+}
+
+async function renderVendorOrders() {
     const tbody = document.getElementById("vendorOrdersBody");
     if (!tbody) return;
-    
-    const mockVendorOrders = [
-        { id: "RA1001", product: "Royal Red Saree", customer: "John Doe", dates: "Oct 12 - Oct 15", status: "Completed" },
-        { id: "RA1003", product: "Pearl Bridal Dress", customer: "Jane Smith", dates: "Nov 01 - Nov 05", status: "Preparing Attire" }
-    ];
-    
-    let html = '';
-    mockVendorOrders.forEach(o => {
-        let badgeClass = o.status === 'Completed' ? 'badge-available' : 'badge-limited';
-        html += `
-        <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;">${o.id}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;">${o.product}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;">${o.customer}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;">${o.dates}</td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span class="badge ${badgeClass}">${o.status}</span></td>
-            <td style="padding: 12px; border-bottom: 1px solid #eee;">
-                <select class="form-control" style="padding:4px; font-size:12px; display:inline-block; width:auto;" onchange="updateOrderStatus('${o.id}', this.value)">
-                    <option value="">Update...</option>
-                    <option value="Preparing Attire">Preparing Attire</option>
-                    <option value="Ready for Pickup">Ready for Pickup</option>
-                    <option value="Picked Up">Picked Up</option>
-                    <option value="Returned">Returned</option>
-                    <option value="Completed">Completed</option>
-                </select>
-            </td>
+    const result = await api("vendor-orders");
+    if (!result.success) {
+        tbody.innerHTML = `<tr><td colspan="7">${escapeHtml(result.message || "Could not load orders.")}</td></tr>`;
+        return;
+    }
+    const nextStatuses = {
+        pending: [["accepted", "Accept"], ["rejected", "Reject"]],
+        accepted: [["preparing", "Preparing"], ["cancelled", "Cancel"]],
+        preparing: [["ready_for_pickup", "Ready for pickup"], ["cancelled", "Cancel"]],
+        ready_for_pickup: [["picked_up", "Picked up"], ["cancelled", "Cancel"]],
+        picked_up: [["returned", "Returned"]]
+    };
+    tbody.innerHTML = result.orders.length ? result.orders.map(order => {
+        const options = nextStatuses[order.vendor_status] || [];
+        return `<tr>
+            <td>${escapeHtml(orderCode(order.order_id))}</td>
+            <td>${escapeHtml(order.product_name)}${order.size ? `<br><small>Size: ${escapeHtml(order.size)}</small>` : ""}</td>
+            <td>${escapeHtml(order.first_name)} ${escapeHtml(order.last_name)}<br><small>${escapeHtml(order.email)}</small></td>
+            <td>${escapeHtml(order.pickup_date)} – ${escapeHtml(order.return_date)} · Qty ${Number(order.quantity)}</td>
+            <td>${statusBadge(order.vendor_status)}</td>
+            <td>Rs. ${Number(order.line_total).toLocaleString()}</td>
+            <td>${options.length ? `<select class="form-control" onchange="updateOrderStatus(${Number(order.order_item_id)}, this.value)"><option value="">Update…</option>${options.map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select>` : "—"}</td>
         </tr>`;
-    });
-    tbody.innerHTML = html;
+    }).join("") : '<tr><td colspan="7">No rental requests yet.</td></tr>';
 }
 
-function updateOrderStatus(orderId, newStatus) {
+async function updateOrderStatus(orderItemId, newStatus) {
     if (!newStatus) return;
-    alert("Order " + orderId + " status updated to: " + newStatus + " (Demo)");
+    const result = await api("vendor-orders", { body: { order_item_id: orderItemId, status: newStatus } });
+    if (!result.success) alert(result.message || "Could not update the rental status.");
+    renderVendorOrders();
 }
 
-function renderShopList() {
+function renderShopListLegacy() {
     const container = document.getElementById("shopsGrid");
     if (!container) return;
     
@@ -800,7 +909,7 @@ function renderShopList() {
     container.innerHTML = html;
 }
 
-function renderShopProfile() {
+function renderShopProfileLegacy() {
     const urlParams = new URLSearchParams(window.location.search);
     const shopId = parseInt(urlParams.get('id')) || 1;
     const shop = shops.find(s => s.id === shopId);
@@ -840,6 +949,425 @@ function renderShopProfile() {
     }
 }
 
+
+let productSizeOptions = [];
+
+async function initializeVendorProductForm() {
+    const form = document.getElementById("vendorProductForm");
+    if (!form) return;
+    const [categories, types, shopData] = await Promise.all([api("categories"), api("size-types"), api("vendor-shops")]);
+    if (!categories.success || !types.success || !shopData.success) {
+        setPageMessage(form, "Could not load product form data.", true);
+        return;
+    }
+    document.getElementById("productCategory").innerHTML = '<option value="">Select a category</option>' +
+        categories.categories.map(item => `<option value="${Number(item.category_id)}">${escapeHtml(item.category_name)}</option>`).join("");
+    const sizeType = document.getElementById("productSizeType");
+    sizeType.innerHTML = '<option value="">Select sizing system (optional)</option>' +
+        types.size_types.map(item => `<option value="${Number(item.size_type_id)}">${escapeHtml(item.type_name)}</option>`).join("");
+    document.getElementById("productShop").innerHTML = (shopData.shops || []).map(item =>
+        `<option value="${Number(item.shop_id)}">${escapeHtml(item.shop_name)} (${escapeHtml(item.status)})</option>`).join("");
+    if (!shopData.shops.length) {
+        setPageMessage(form, "Create a shop before adding products.", true);
+        form.querySelector('button[type="submit"]').disabled = true;
+        return;
+    }
+    sizeType.addEventListener("change", loadSizeOptionsForType);
+    form.addEventListener("submit", validateAddProductForm);
+    const id = new URLSearchParams(location.search).get("id");
+    if (!id) return;
+    form.dataset.productId = id;
+    document.getElementById("availability").dataset.productId = id;
+    document.getElementById("productShop").disabled = true;
+    document.getElementById("vendorProductHeading").textContent = "Edit Product";
+    const products = await api("products", {}, "&manage=1");
+    const raw = products.success && products.products.find(item => String(item.product_id) === String(id));
+    if (!raw) {
+        setPageMessage(form, products.message || "Product not found or access denied.", true);
+        form.querySelector('button[type="submit"]').disabled = true;
+        return;
+    }
+    const product = mapProduct(raw);
+    document.getElementById("productName").value = product.name;
+    document.getElementById("productCategory").value = raw.category_id;
+    document.getElementById("productPrice").value = product.price;
+    document.getElementById("productDeposit").value = product.deposit;
+    document.getElementById("productStock").value = product.stock;
+    document.getElementById("productDescription").value = product.description;
+    document.getElementById("productCustomNotes").value = product.customMeasurementNotes;
+    document.getElementById("productSizeType").value = product.sizeTypeId || "";
+    document.getElementById("productStatus").value = product.status === "inactive" ? "inactive" : "active";
+    document.getElementById("productShop").value = product.shopId;
+    await loadSizeOptionsForType();
+    const variants = await api("product-variants", {}, "&product_id=" + encodeURIComponent(id));
+    if (variants.success) variants.variants.forEach(addProductVariantRow);
+    loadProductUnavailableDates(id);
+}
+
+async function loadSizeOptionsForType() {
+    const typeId = document.getElementById("productSizeType").value;
+    if (!typeId) {
+        productSizeOptions = [];
+        return;
+    }
+    const result = await api("size-options", {}, "&size_type_id=" + encodeURIComponent(typeId));
+    if (!result.success) throw new Error(result.message || "Could not load size options.");
+    productSizeOptions = result.size_options;
+    document.querySelectorAll("#productVariantsBody .variant-size-option").forEach(select => {
+        select.innerHTML = '<option value="">Custom</option>' + productSizeOptions.map(item =>
+            `<option value="${Number(item.size_option_id)}" data-label="${escapeHtml(item.display_label)}">${escapeHtml(item.display_label)}</option>`
+        ).join("");
+    });
+}
+
+function addProductVariantRow(variant = {}) {
+    const tbody = document.getElementById("productVariantsBody");
+    if (!tbody) return;
+    const options = productSizeOptions.map(item => `<option value="${Number(item.size_option_id)}" data-label="${escapeHtml(item.display_label)}" ${String(item.size_option_id) === String(variant.size_option_id || "") ? "selected" : ""}>${escapeHtml(item.display_label)}</option>`).join("");
+    let measurements = variant.custom_measurements || "";
+    if (typeof measurements !== "string") measurements = JSON.stringify(measurements);
+    const row = document.createElement("tr");
+    row.innerHTML = `<td><select class="form-control variant-size-option" onchange="useVariantSizeLabel(this)"><option value="">Custom</option>${options}</select>
+        <input class="form-control variant-label" maxlength="160" placeholder="Size / variant label" value="${escapeHtml(variant.variant_label || "")}" required></td>
+        <td><input class="form-control variant-stock" type="number" min="0" step="1" value="${Number(variant.stock || 0)}" required></td>
+        <td><input class="form-control variant-measurements" value="${escapeHtml(measurements === "{}" ? "" : measurements)}" placeholder='{"bust_inches":36}'></td>
+        <td><button type="button" class="btn btn-outline">Remove</button></td>`;
+    row.querySelector("button").addEventListener("click", () => row.remove());
+    tbody.appendChild(row);
+}
+
+function useVariantSizeLabel(select) {
+    const option = select.selectedOptions[0];
+    if (option.dataset.label) select.closest("tr").querySelector(".variant-label").value = option.dataset.label;
+}
+
+async function saveVendorProduct(form) {
+    const variants = [...document.querySelectorAll("#productVariantsBody tr")].map(row => {
+        const measurements = row.querySelector(".variant-measurements").value.trim();
+        if (measurements) {
+            let parsed;
+            try { parsed = JSON.parse(measurements); } catch { throw new Error("Size measurements must be valid JSON."); }
+            if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Size measurements must be a JSON object.");
+        }
+        return {
+            size_option_id: row.querySelector(".variant-size-option").value || null,
+            variant_label: row.querySelector(".variant-label").value.trim(),
+            stock: Number(row.querySelector(".variant-stock").value),
+            custom_measurements: measurements || null
+        };
+    });
+    const body = {
+        shop_id: Number(document.getElementById("productShop").value),
+        category_id: Number(document.getElementById("productCategory").value),
+        product_name: document.getElementById("productName").value.trim(),
+        description: document.getElementById("productDescription").value.trim(),
+        price_per_day: Number(document.getElementById("productPrice").value),
+        deposit_amount: Number(document.getElementById("productDeposit").value || 0),
+        stock: Number(document.getElementById("productStock").value || 0),
+        size_type_id: document.getElementById("productSizeType").value || null,
+        custom_measurement_notes: document.getElementById("productCustomNotes").value.trim(),
+        status: document.getElementById("productStatus").value,
+        variants
+    };
+    const id = form.dataset.productId;
+    const result = id ? await api("products", { method: "PUT", body }, "&id=" + encodeURIComponent(id)) : await api("products", { body });
+    if (!result.success) {
+        setPageMessage(form, result.message || "Could not save product.", true);
+        return;
+    }
+    const productId = id || result.product_id;
+    const files = document.getElementById("productImages").files;
+    if (files.length) {
+        const images = new FormData();
+        [...files].forEach(file => images.append("images[]", file));
+        const uploaded = await api("product-images", { body: images }, "&product_id=" + encodeURIComponent(productId));
+        if (!uploaded.success) {
+            setPageMessage(form, "Product saved, but image upload failed: " + uploaded.message, true);
+            return;
+        }
+    }
+    window.location.href = "vendor-products.html";
+}
+
+async function loadProductUnavailableDates(id) {
+    const list = document.getElementById("unavailableDatesList");
+    if (!list) return;
+    const result = await api("availability", {}, "&product_id=" + encodeURIComponent(id));
+    if (!result.success) {
+        list.textContent = result.message || "Could not load unavailable dates.";
+        return;
+    }
+    list.innerHTML = result.unavailable_dates.map(item => `<li>${escapeHtml(item.start_date)} – ${escapeHtml(item.end_date)} ${escapeHtml(item.reason || "")}
+        <button type="button" onclick="removeProductUnavailableDates(${Number(item.availability_id)},${Number(id)})">Remove</button></li>`).join("") || "<li>No date blocks.</li>";
+}
+
+async function addProductUnavailableDates(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const id = document.getElementById("availability").dataset.productId;
+    if (!id) return setPageMessage(form, "Save the product before blocking rental dates.", true);
+    const result = await api("availability", { body: {
+        product_id: Number(id),
+        start_date: document.getElementById("unavailableStart").value,
+        end_date: document.getElementById("unavailableEnd").value,
+        reason: document.getElementById("unavailableReason").value.trim()
+    }});
+    setPageMessage(form, result.message, !result.success);
+    if (result.success) {
+        form.reset();
+        loadProductUnavailableDates(id);
+    }
+    return false;
+}
+
+async function removeProductUnavailableDates(id, productId) {
+    const result = await api("availability", { method: "DELETE" }, "&id=" + encodeURIComponent(id));
+    if (!result.success) alert(result.message || "Could not remove the date block.");
+    loadProductUnavailableDates(productId);
+}
+
+async function loadVendorProfile() {
+    const form = document.getElementById("vendorShopForm");
+    if (!form) return;
+    const result = await api("vendor-shops");
+    if (!result.success) return setPageMessage(form, result.message || "Could not load your shop profile.", true);
+    const shopsList = result.shops || [];
+    const select = document.getElementById("vendorShopSelect");
+    select.innerHTML = shopsList.map(item => `<option value="${Number(item.shop_id)}">${escapeHtml(item.shop_name)} (${escapeHtml(item.status)})</option>`).join("") || '<option value="">No shops yet</option>';
+    form.querySelectorAll("[data-shop-field]").forEach(field => field.disabled = !shopsList.length);
+    document.getElementById("vendorShopActivate").disabled = !shopsList.length;
+    document.getElementById("shopLogoUpload").disabled = !shopsList.length;
+    if (shopsList.length) {
+        const profile = result.profile || {};
+        form.vendorShops = shopsList;
+        document.getElementById("ownerName").value = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
+        document.getElementById("ownerPhone").value = profile.phone || "";
+        fillVendorShop(shopsList, select.value);
+    } else document.getElementById("shopStatus").textContent = "Create a shop to get started.";
+    if (!form.dataset.bound) {
+        select.addEventListener("change", () => fillVendorShop(form.vendorShops || [], select.value));
+        form.addEventListener("submit", saveVendorShopProfile);
+        document.getElementById("vendorShopActivate").addEventListener("click", toggleVendorShop);
+        document.getElementById("shopLogoUpload").addEventListener("change", uploadVendorShopLogo);
+        form.dataset.bound = "true";
+    }
+    const newShopForm = document.getElementById("vendorNewShopForm");
+    if (newShopForm && !newShopForm.dataset.bound) {
+        newShopForm.addEventListener("submit", createVendorShop);
+        newShopForm.dataset.bound = "true";
+    }
+}
+
+function fillVendorShop(list, id) {
+    const shop = list.find(item => String(item.shop_id) === String(id));
+    if (!shop) return;
+    document.getElementById("shopName").value = shop.shop_name || "";
+    document.getElementById("shopEmail").value = shop.email || "";
+    document.getElementById("shopPhone").value = shop.phone || "";
+    document.getElementById("shopAddress").value = shop.address || "";
+    document.getElementById("shopDescription").value = shop.description || "";
+    document.getElementById("shopLogoPreview").src = shop.logo_path || "images/logo.svg";
+    document.getElementById("shopStatus").textContent = "Shop status: " + shop.status;
+    const button = document.getElementById("vendorShopActivate");
+    button.textContent = shop.status === "approved" ? "Deactivate Shop" : "Activate Shop";
+    button.disabled = !["approved", "inactive"].includes(shop.status);
+}
+
+async function saveVendorShopProfile(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const result = await api("vendor-shops", { method: "PUT", body: {
+        shop_id: Number(document.getElementById("vendorShopSelect").value),
+        shop_name: document.getElementById("shopName").value.trim(),
+        owner_name: document.getElementById("ownerName").value.trim(),
+        owner_phone: document.getElementById("ownerPhone").value.trim(),
+        phone: document.getElementById("shopPhone").value.trim(),
+        email: document.getElementById("shopEmail").value.trim(),
+        address: document.getElementById("shopAddress").value.trim(),
+        description: document.getElementById("shopDescription").value.trim()
+    }});
+    setPageMessage(form, result.message, !result.success);
+    if (result.success) loadVendorProfile();
+}
+
+async function createVendorShop(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const result = await api("vendor-shops", { body: {
+        shop_name: document.getElementById("newShopName").value.trim(),
+        email: document.getElementById("newShopEmail").value.trim(),
+        phone: document.getElementById("newShopPhone").value.trim(),
+        address: document.getElementById("newShopAddress").value.trim(),
+        description: document.getElementById("newShopDescription").value.trim()
+    }});
+    setPageMessage(form, result.message, !result.success);
+    if (result.success) {
+        form.reset();
+        await loadVendorProfile();
+    }
+}
+
+async function toggleVendorShop() {
+    const button = document.getElementById("vendorShopActivate");
+    const result = await api("vendor-shops", { method: "PATCH", body: {
+        shop_id: Number(document.getElementById("vendorShopSelect").value),
+        is_active: button.textContent.trim() === "Activate Shop"
+    }});
+    setPageMessage(document.getElementById("vendorShopForm"), result.message, !result.success);
+    if (result.success) loadVendorProfile();
+}
+
+async function uploadVendorShopLogo(event) {
+    const input = event.currentTarget;
+    if (!input.files.length) return;
+    const body = new FormData();
+    body.append("shop_id", document.getElementById("vendorShopSelect").value);
+    body.append("logo", input.files[0]);
+    const result = await api("shop-logo", { body });
+    setPageMessage(document.getElementById("vendorShopForm"), result.message, !result.success);
+    if (result.success) document.getElementById("shopLogoPreview").src = result.logo_path;
+    input.value = "";
+}
+
+function renderShopList() {
+    const container = document.getElementById("shopsGrid");
+    if (!container) return;
+    api("shops").then(result => {
+        container.innerHTML = result.success && result.shops.length ? result.shops.map(shop => `
+            <div class="card"><div class="card-body text-center">
+                <img src="${escapeHtml(shop.logo_path || "images/logo.svg")}" width="60" alt="${escapeHtml(shop.shop_name)} logo" style="margin:0 auto 15px;">
+                <h3 class="card-title">${escapeHtml(shop.shop_name)}</h3>
+                <p class="text-muted mb-2">${escapeHtml(shop.address || "Sri Lanka")}</p>
+                <p class="mb-3">${escapeHtml(shop.description || "")}</p>
+                <p class="text-muted mb-3">${Number(shop.product_count)} products</p>
+                <a href="shop-profile.html?id=${Number(shop.shop_id)}" class="btn btn-outline" style="width:100%">Visit Shop</a>
+            </div></div>`).join("") : `<p>${escapeHtml(result.message || "No approved shops are available yet.")}</p>`;
+    }).catch(() => { container.innerHTML = "<p role='alert'>Could not load shops. Check that the server is running.</p>"; });
+}
+
+function renderShopProfile() {
+    const id = Number(new URLSearchParams(location.search).get("id"));
+    const title = document.getElementById("shopProfileName");
+    const locationText = document.getElementById("shopProfileLocation");
+    const container = document.getElementById("shopProductsGrid");
+    if (!container || !title) return;
+    if (!id) {
+        title.textContent = "Shop not found";
+        container.innerHTML = "<p>This shop is not available.</p>";
+        return;
+    }
+    Promise.all([api("shops"), loadProducts()]).then(([shopsResult, products]) => {
+        const shop = shopsResult.success ? shopsResult.shops.find(item => Number(item.shop_id) === id) : null;
+        if (!shop) {
+            title.textContent = "Shop not found";
+            container.innerHTML = "<p>This shop is not available.</p>";
+            return;
+        }
+        title.textContent = shop.shop_name;
+        if (locationText) locationText.textContent = [shop.address, shop.phone, shop.email].filter(Boolean).join(" · ");
+        const description = document.getElementById("shopProfileDescription");
+        if (description) description.textContent = shop.description || "";
+        container.innerHTML = products.filter(product => Number(product.shopId) === id).map(product => `
+            <div class="card product-card" data-product-id="${Number(product.id)}">
+                <div class="card-img"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}"></div>
+                <div class="card-body text-center">
+                    <span class="badge ${product.availability === "Available" ? "badge-available" : product.availability === "Limited" ? "badge-limited" : "badge-unavailable"} mb-2">${escapeHtml(product.availability)}</span>
+                    <p class="text-muted">${escapeHtml(product.category)} · ${escapeHtml(shop.shop_name)}</p>
+                    <h3 class="card-title">${escapeHtml(product.name)}</h3>
+                    <div class="price">Rs. ${product.price.toLocaleString()} / day</div>
+                    <a href="product-details.html?id=${encodeURIComponent(product.id)}" class="btn btn-outline" style="width:100%">View Details</a>
+                </div>
+            </div>`).join("") || "<p>This shop has no active products yet.</p>";
+        wireProductCards();
+    }).catch(() => { container.innerHTML = "<p role='alert'>Could not load shop products. Check that the server is running.</p>"; });
+}
+
+async function renderAdminOverview() {
+    const target = document.getElementById("adminShopCount");
+    if (!target) return;
+    const result = await api("admin-overview");
+    if (!result.success) {
+        target.textContent = result.message || "Unavailable";
+        return;
+    }
+    const data = result.overview;
+    target.textContent = Number(data.shops).toLocaleString();
+    document.getElementById("adminRentalVolume").textContent = "Rs. " + Number(data.platform_rentals).toLocaleString();
+    document.getElementById("adminActiveOrders").textContent = Number(data.active_orders).toLocaleString();
+    document.getElementById("adminVendorCount").textContent = Number(data.vendors).toLocaleString();
+    document.getElementById("adminPendingVendors").textContent = Number(data.pending_vendors).toLocaleString();
+    document.getElementById("adminProductCount").textContent = Number(data.products).toLocaleString();
+}
+
+async function renderAdminManagement() {
+    const vendorBody = document.getElementById("adminVendorsBody");
+    const shopBody = document.getElementById("adminShopsBody");
+    const productBody = document.getElementById("adminProductsBody");
+    if (!vendorBody || !shopBody || !productBody) return;
+    const [vendorResult, shopResult, productResult] = await Promise.all([
+        api("admin-vendors"), api("shops", {}, "&manage=1"), api("products", {}, "&manage=1")
+    ]);
+    if (!vendorResult.success) vendorBody.innerHTML = `<tr><td colspan="4">${escapeHtml(vendorResult.message || "Could not load vendors.")}</td></tr>`;
+    else {
+        const vendors = [...new Map(vendorResult.vendors.map(vendor => [vendor.user_id, vendor])).values()];
+        vendorBody.innerHTML = vendors.length ? vendors.map(vendor => {
+            const action = vendor.vendor_status === "pending"
+                ? `<button class="btn btn-primary" onclick="changeVendorStatus(${Number(vendor.user_id)},'approve')">Approve</button> <button class="btn btn-outline" onclick="changeVendorStatus(${Number(vendor.user_id)},'reject')">Reject</button>`
+                : vendor.vendor_status === "suspended"
+                    ? `<button class="btn btn-outline" onclick="changeVendorStatus(${Number(vendor.user_id)},'reactivate')">Reactivate</button>`
+                    : `<button class="btn btn-outline" onclick="changeVendorStatus(${Number(vendor.user_id)},'suspend')">Suspend</button>`;
+            return `<tr><td>${escapeHtml(vendor.first_name)} ${escapeHtml(vendor.last_name)}</td><td>${escapeHtml(vendor.email)}</td><td>${statusBadge(vendor.vendor_status)}</td><td>${action}</td></tr>`;
+        }).join("") : '<tr><td colspan="4">No vendors registered.</td></tr>';
+    }
+    if (!shopResult.success) shopBody.innerHTML = `<tr><td colspan="5">${escapeHtml(shopResult.message || "Could not load shops.")}</td></tr>`;
+    else shopBody.innerHTML = shopResult.shops.length ? shopResult.shops.map(shop => {
+        const status = shop.status === "pending"
+            ? `<button class="btn btn-primary" onclick="changeShopStatus(${Number(shop.shop_id)},'approved')">Approve</button> <button class="btn btn-outline" onclick="changeShopStatus(${Number(shop.shop_id)},'rejected')">Reject</button>`
+            : shop.status === "approved"
+                ? `<button class="btn btn-outline" onclick="changeShopStatus(${Number(shop.shop_id)},'inactive')">Deactivate</button>`
+                : shop.status === "inactive"
+                    ? `<button class="btn btn-outline" onclick="changeShopStatus(${Number(shop.shop_id)},'approved')">Reactivate</button>`
+                    : `<button class="btn btn-outline" onclick="changeShopStatus(${Number(shop.shop_id)},'approved')">Approve</button>`;
+        return `<tr><td>${escapeHtml(shop.shop_name)}</td><td>${escapeHtml(shop.first_name)} ${escapeHtml(shop.last_name)}</td><td>${escapeHtml(shop.address || "—")}</td><td>${statusBadge(shop.status)}</td><td>${status}</td></tr>`;
+    }).join("") : '<tr><td colspan="5">No shops registered.</td></tr>';
+    if (!productResult.success) productBody.innerHTML = `<tr><td colspan="6">${escapeHtml(productResult.message || "Could not load products.")}</td></tr>`;
+    else productBody.innerHTML = productResult.products.length ? productResult.products.map(product => `<tr>
+        <td>${escapeHtml(product.product_name)}</td><td>${escapeHtml(product.shop_name || "—")}</td>
+        <td>${escapeHtml(product.category_name || "—")}</td><td>Rs. ${Number(product.price_per_day).toLocaleString()}</td>
+        <td>${Number(product.stock)}</td><td>${statusBadge(product.status)}</td></tr>`).join("") : '<tr><td colspan="6">No vendor products yet.</td></tr>';
+}
+
+async function changeVendorStatus(vendorId, decision) {
+    const result = await api("admin-vendors", { body: { vendor_id: vendorId, decision } });
+    if (!result.success) alert(result.message || "Could not update vendor account.");
+    renderAdminManagement();
+    renderAdminOverview();
+}
+
+async function changeShopStatus(shopId, status) {
+    const result = await api("shops", { method: "PATCH", body: { shop_id: shopId, status } }, "&manage=1");
+    if (!result.success) alert(result.message || "Could not update shop status.");
+    renderAdminManagement();
+    renderAdminOverview();
+}
+
+async function renderAdminOrders() {
+    const tbody = document.getElementById("adminOrdersBody");
+    if (!tbody) return;
+    const result = await api("orders");
+    if (!result.success) {
+        tbody.innerHTML = `<tr><td colspan="6">${escapeHtml(result.message || "Could not load orders.")}</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = result.orders.length ? result.orders.map(order => `<tr>
+        <td>${escapeHtml(orderCode(order.order_id))}<br><small>${escapeHtml(order.created_at || "")}</small></td>
+        <td>${escapeHtml(order.first_name)} ${escapeHtml(order.last_name)}<br><small>${escapeHtml(order.email)}</small></td>
+        <td>Rs. ${Number(order.rental_total).toLocaleString()}</td>
+        <td>Rs. ${Number(order.deposit_total).toLocaleString()}</td>
+        <td>Rs. ${Number(order.grand_total).toLocaleString()}</td>
+        <td>${statusBadge(order.status)}</td>
+    </tr>`).join("") : '<tr><td colspan="6">No orders yet.</td></tr>';
+}
 
 /* ----------------------------------------------------------
    11) RUN ON PAGE LOAD
@@ -896,6 +1424,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Vendor & Shop initialization
     renderVendorProducts();
     renderVendorOrders();
+    renderVendorDashboard();
+    loadVendorProfile();
+    initializeVendorProductForm();
+    renderAdminOverview();
+    renderAdminManagement();
+    renderAdminOrders();
     renderShopList();
     renderShopProfile();
     wireProductCards();

@@ -1,102 +1,64 @@
-# RentAttire backend (additive files only)
+# RentAttire PHP/MySQL backend
 
-This backend was added in a separate `backend/` folder. The original HTML, CSS, JavaScript, images and page files were not edited.
+The existing RentAttire pages use the PHP/MySQL API in `backend/api/index.php`. Vendor management reuses the existing users, shops, products, size types, variants, carts, and rental orders.
 
 ## Requirements
+
 - WampServer with PHP 8.1+ and MySQL/MariaDB
-- PHP extensions: PDO, pdo_mysql, mbstring
+- PHP extensions: PDO, pdo_mysql, mbstring, fileinfo
 - Apache and MySQL running
 
 ## Installation
-1. Copy the complete `RentAttire_Protype_Version` folder into `C:\wamp64\www\`.
+
+1. Copy the RentAttire folder into `C:\wamp64\www\`.
 2. Open phpMyAdmin at `http://localhost/phpmyadmin/`.
-3. Import `backend/database/rentattire.sql`.
-4. Check `backend/config/database.php`. Default WAMP credentials are host `127.0.0.1`, user `root`, blank password. Change if yours differ.
-5. Test `http://localhost/RentAttire_Protype_Version/backend/api/index.php?action=health`.
-6. Expected response: `{"success":true,"message":"RentAttire API is running."}`.
+3. For a new installation, create `rentattire_db` and import `backend/database/rentattire.sql`.
+4. For an existing RentAttire database, select `rentattire_db` in phpMyAdmin and import `backend/database/migration_vendor_management.sql` after the original schema. It adds shop logos, per-item vendor order status, product image galleries, and unavailable-date blocks.
+5. Check `backend/config/database.php`. Default WAMP credentials are host `127.0.0.1`, user `root`, blank password. Change these if necessary.
+6. Visit `http://localhost/RentAttire/backend/api/index.php?action=health`. Expected response: `{"success":true,"message":"RentAttire API is running."}`.
 
-## API base URL
-`http://localhost/RentAttire_Protype_Version/backend/api/index.php`
+The database name in the migration and API configuration is `rentattire_db`. Change both if you use a different name.
 
-Pass an `action` query parameter. JSON request bodies are supported. Session cookies are used for authentication; call the API from the same origin.
+## API actions
 
-## Implemented API actions
-
-| Action | Method | Purpose |
+| Action | Methods | Purpose |
 |---|---|---|
-| `health` | GET | Check API |
-| `register` | POST | Customer registration |
-| `vendor-register` | POST | Vendor and pending shop registration |
-| `login` | POST | Customer/vendor/admin login |
-| `logout` | POST | End session |
-| `me` | GET | Current signed-in user |
-| `products` | GET | Public active products |
-| `products` | POST | Vendor/admin add product |
-| `products&id=ID` | PUT/PATCH | Vendor/admin update product |
-| `products&id=ID` | DELETE | Vendor/admin delete product |
-| `categories` | GET | List categories |
-| `shops` | GET | Approved shops |
-| `cart` | GET/POST/DELETE | Database-backed cart |
-| `checkout` | POST | Create order from cart |
-| `orders` | GET | Customer orders / admin all orders |
-| `order-items&order_id=ID` | GET | Order details |
-| `update-order` | POST | Admin updates order status |
-| `contact` | POST | Save contact message |
+| `health` | GET | API health check |
+| `register`, `vendor-register` | POST | Customer or pending vendor/shop registration |
+| `login`, `logout`, `me`, `csrf` | POST/GET | Session authentication and CSRF token |
+| `products` | GET/POST/PUT/DELETE | Public listings and vendor/admin product management |
+| `categories`, `size-types`, `size-options`, `product-variants` | GET | Categories and garment sizing/inventory |
+| `shops` | GET | Approved active shops for the public storefront |
+| `shops&manage=1` | GET/PATCH | Admin shop listings and status changes |
+| `vendor-shops` | GET/POST/PUT/PATCH | Vendor profile and owned-shop management |
+| `shop-logo` | POST | Vendor-owned shop logo upload |
+| `product-images` | GET/POST/DELETE | Vendor/admin product galleries |
+| `availability` | GET/POST/DELETE | Rental availability and vendor date blocks |
+| `vendor-dashboard`, `vendor-orders` | GET/POST | Vendor metrics, rental requests, and item-level status transitions |
+| `admin-vendors` | GET/POST | Vendor review, suspension, and reactivation |
+| `admin-overview` | GET | Admin platform metrics |
+| `cart`, `checkout`, `orders`, `order-items` | GET/POST/DELETE | Customer cart, rental booking, and order views |
+| `update-order` | POST | Admin order status update |
+| `contact` | POST | Contact form submission |
 
-### Example JSON: customer registration
-```json
-{
-  "first_name": "Ahamed",
-  "last_name": "Nusaif",
-  "email": "customer@example.com",
-  "phone": "0770000000",
-  "password": "ChangeThis123!"
-}
-```
+Pass the action as an `action` query parameter. JSON request bodies are supported; uploads use `multipart/form-data`. Session cookies and CSRF protection require same-origin requests.
 
-### Example JSON: login
-```json
-{
-  "email": "customer@example.com",
-  "password": "ChangeThis123!"
-}
-```
+## Vendor workflow and availability
 
-### Example JSON: add to cart
-```json
-{
-  "product_id": 1,
-  "quantity": 1,
-  "pickup_date": "2026-12-01",
-  "return_date": "2026-12-03"
-}
-```
+- Vendor registration creates a pending vendor account and pending shop. Admins can approve/reject vendors and separately approve, reject, deactivate, or reactivate shops using `admin/shops.html`.
+- Vendors can edit their own shops and products, add multiple images, set rental prices/deposits, select clothing size systems, and manage per-size quantity and measurements.
+- Public products are limited to active products on approved shops owned by active vendors.
+- Availability is date-range based. Checkout rechecks stock for the selected size/variant against overlapping non-cancelled rentals. Product stock is not permanently decremented on checkout.
+- Uploaded images are limited to JPEG, PNG, and WebP, checked server-side, limited to 5 MB each, and stored with generated filenames under `backend/uploads`.
 
-### Example JSON: add product
-```json
-{
-  "shop_id": 1,
-  "category_id": 1,
-  "product_name": "Royal Red Saree",
-  "description": "Traditional saree for rental",
-  "price_per_day": 2500,
-  "deposit_amount": 1000,
-  "stock": 2,
-  "image_path": "images/saree_royal_red.png"
-}
-```
+For admin access, insert an `admin` user with a password hash generated by PHP `password_hash()`. Never store plain-text passwords. Do not expose this development database to the public internet.
 
-## Important setup notes
-- New vendor shops start with `pending` status. An admin must approve the shop in the database before its products appear publicly.
-- Create an admin account by inserting a user with role `admin` and a password hash generated by PHP `password_hash()`. Do not store a plain-text password.
-- Do not expose this local development database to the public internet.
-- `uploads/` is reserved for a future validated image-upload endpoint; image upload is not implemented yet.
-- The existing `.html` pages and `js/script.js` remain unchanged by design. Therefore, the current prototype still uses its existing demo/localStorage behaviour until its forms and UI are separately connected to these APIs. This backend is an additive foundation, not a claim that every frontend feature is already integrated.
-- Payment gateway, date-overlap inventory reservation, password reset, email verification, FAQ/admin CRUD screens and full vendor/admin dashboard integration are not implemented yet.
+Payment gateway integration, password reset, and email verification are not implemented.
 
-## Security notes
+## Security
+
 - Passwords use `password_hash()` and `password_verify()`.
 - Database operations use PDO prepared statements.
 - Sessions use HttpOnly and SameSite=Lax cookies.
-- Role checks protect vendor/admin operations.
-- Add CSRF protection before deploying beyond local coursework testing.
+- Vendor operations derive the vendor identity from the authenticated session and enforce shop/product/order ownership in the API.
+- Mutating API requests require the session CSRF token.

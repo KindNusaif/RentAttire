@@ -20,7 +20,7 @@
             </nav>
             <div class="nav-icons">
                 <a href="../index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">Visit Site</a>
-                <a href="login.html" style="margin-left: 10px;">Logout</a>
+                <a href="../index.html" data-signout style="margin-left: 10px;">Sign out</a>
             </div>
         </div>
     </header>
@@ -32,25 +32,21 @@
             <div class="grid-3 mb-4">
                 <div class="card p-4 text-center">
                     <h3 class="text-muted mb-2">Total Shops</h3>
-                    <div style="font-size:2rem; font-weight:bold; color:var(--primary);">12</div>
+                    <div id="adminShopCount" style="font-size:2rem; font-weight:bold; color:var(--primary);">—</div>
                 </div>
                 <div class="card p-4 text-center">
-                    <h3 class="text-muted mb-2">Total Platform Earnings</h3>
-                    <div style="font-size:2rem; font-weight:bold; color:var(--primary);">Rs. 1,450,000</div>
+                    <h3 class="text-muted mb-2">Rental Volume</h3>
+                    <div id="adminRentalVolume" style="font-size:2rem; font-weight:bold; color:var(--primary);">—</div>
                 </div>
                 <div class="card p-4 text-center">
                     <h3 class="text-muted mb-2">Active Orders</h3>
-                    <div style="font-size:2rem; font-weight:bold; color:var(--primary);">45</div>
+                    <div id="adminActiveOrders" style="font-size:2rem; font-weight:bold; color:var(--primary);">—</div>
                 </div>
             </div>
-            
-            <div class="card p-4">
-                <h3 class="mb-3">Recent Activity</h3>
-                <ul style="list-style:none; padding:0; margin:0; line-height:2;">
-                    <li><span class="badge badge-available">New Shop</span> Kandy Formal Wear registered</li>
-                    <li><span class="badge badge-limited">Order</span> #RA1045 placed at Colombo Silk House</li>
-                    <li><span class="badge badge-available">New Shop</span> Galle Bridal registered</li>
-                </ul>
+            <div class="grid-3">
+                <div class="card p-4 text-center"><h3 class="text-muted mb-2">Vendors</h3><div id="adminVendorCount" style="font-size:2rem;font-weight:bold;color:var(--primary);">—</div></div>
+                <div class="card p-4 text-center"><h3 class="text-muted mb-2">Pending Vendor Approval</h3><div id="adminPendingVendors" style="font-size:2rem;font-weight:bold;color:var(--primary);">—</div></div>
+                <div class="card p-4 text-center"><h3 class="text-muted mb-2">Products</h3><div id="adminProductCount" style="font-size:2rem;font-weight:bold;color:var(--primary);">—</div></div>
             </div>
         </div>
     </section>

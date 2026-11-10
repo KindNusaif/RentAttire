@@ -20,58 +20,38 @@
             </nav>
             <div class="nav-icons">
                 <a href="../index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">Visit Site</a>
-                <a href="login.html" style="margin-left: 10px;">Logout</a>
+                <a href="../index.html" data-signout style="margin-left: 10px;">Sign out</a>
             </div>
         </div>
     </header>
 
     <section class="section">
         <div class="container">
-            <h1 class="mb-4">Registered Shops</h1>
+            <h1 class="mb-4">Vendor Accounts and Shops</h1>
+            <h2 class="mb-3">Vendor approval and account access</h2>
             <div class="card" style="padding: 0; overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; text-align: left;">
                     <thead>
                         <tr style="background: #f9f9f9; border-bottom: 2px solid #eee;">
-                            <th style="padding: 12px;">Shop ID</th>
-                            <th style="padding: 12px;">Shop Name</th>
-                            <th style="padding: 12px;">Owner</th>
-                            <th style="padding: 12px;">City</th>
-                            <th style="padding: 12px;">Status</th>
-                            <th style="padding: 12px;">Action</th>
+                            <th style="padding: 12px;">Vendor</th><th style="padding: 12px;">Email</th>
+                            <th style="padding: 12px;">Account status</th><th style="padding: 12px;">Action</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">SH-101</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Colombo Silk House</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Jane Doe</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Colombo</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span class="badge badge-available">Active</span></td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">
-                                <button class="btn btn-outline" style="padding:4px 8px; font-size:12px;">Disable</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">SH-102</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Kandy Formal Wear</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">John Smith</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Kandy</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span class="badge badge-available">Active</span></td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">
-                                <button class="btn btn-outline" style="padding:4px 8px; font-size:12px;">Disable</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">SH-103</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Galle Bridal</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Sam Perera</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Galle</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span class="badge badge-unavailable">Pending Approval</span></td>
-                            <td style="padding: 12px; border-bottom: 1px solid #eee;">
-                                <button class="btn btn-primary" style="padding:4px 8px; font-size:12px;">Approve</button>
-                            </td>
-                        </tr>
-                    </tbody>
+                    <tbody id="adminVendorsBody"><tr><td colspan="4">Loading…</td></tr></tbody>
+                </table>
+            </div>
+            <h2 class="mb-3 mt-4">Shop listings</h2>
+            <div class="card" style="padding:0;overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;text-align:left;">
+                    <thead><tr style="background:#f9f9f9;"><th style="padding:12px;">Shop</th><th style="padding:12px;">Vendor</th><th style="padding:12px;">Address</th><th style="padding:12px;">Status</th><th style="padding:12px;">Action</th></tr></thead>
+                    <tbody id="adminShopsBody"><tr><td colspan="5">Loading…</td></tr></tbody>
+                </table>
+            </div>
+            <h2 class="mb-3 mt-4">Vendor products</h2>
+            <div class="card" style="padding:0;overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;text-align:left;">
+                    <thead><tr style="background:#f9f9f9;"><th style="padding:12px;">Product</th><th style="padding:12px;">Shop</th><th style="padding:12px;">Category</th><th style="padding:12px;">Rental price / day</th><th style="padding:12px;">Stock</th><th style="padding:12px;">Status</th></tr></thead>
+                    <tbody id="adminProductsBody"><tr><td colspan="6">Loading…</td></tr></tbody>
                 </table>
             </div>
         </div>

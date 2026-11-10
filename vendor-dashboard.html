@@ -21,28 +21,40 @@
             </nav>
             <div class="nav-icons">
                 <a href="index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">View Store</a>
-                <a href="index.html" style="margin-left: 10px;">Logout</a>
+                <a href="#" data-signout style="margin-left: 10px;">Sign out</a>
             </div>
         </div>
     </header>
 
     <section class="section">
         <div class="container">
-            <h1 class="mb-4">Welcome back, Colombo Silk House</h1>
+            <h1 id="vendorWelcome" class="mb-4">Vendor Dashboard</h1>
+            <p id="vendorApprovalNotice" class="card p-3 mb-4" role="status" hidden></p>
             
             <div class="grid-3 mb-4">
                 <div class="card p-4 text-center">
                     <h3 class="text-muted mb-2">Total Earnings</h3>
-                    <div style="font-size:2rem; font-weight:bold; color:var(--primary);">Rs. 125,000</div>
+                    <div id="vendorEarnings" style="font-size:2rem; font-weight:bold; color:var(--primary);">—</div>
                 </div>
                 <div class="card p-4 text-center">
-                    <h3 class="text-muted mb-2">Active Orders</h3>
-                    <div style="font-size:2rem; font-weight:bold; color:var(--primary);">3</div>
+                    <h3 class="text-muted mb-2">Total Orders</h3>
+                    <div id="vendorOrdersCount" style="font-size:2rem; font-weight:bold; color:var(--primary);">—</div>
                 </div>
                 <div class="card p-4 text-center">
                     <h3 class="text-muted mb-2">Products Listed</h3>
-                    <div style="font-size:2rem; font-weight:bold; color:var(--primary);">8</div>
+                    <div id="vendorProductsCount" style="font-size:2rem; font-weight:bold; color:var(--primary);">—</div>
                 </div>
+            </div>
+            <div class="grid-2 mb-4">
+                <div class="card p-4 text-center"><h3 class="text-muted mb-2">Pending Requests</h3><div id="vendorPendingCount" style="font-size:2rem;font-weight:bold;color:var(--primary);">—</div></div>
+                <div class="card p-4 text-center"><h3 class="text-muted mb-2">Active Rentals</h3><div id="vendorActiveCount" style="font-size:2rem;font-weight:bold;color:var(--primary);">—</div></div>
+            </div>
+            <div class="card p-4" style="overflow-x:auto;">
+                <h2 class="mb-3">Recent Orders</h2>
+                <table style="width:100%;border-collapse:collapse;text-align:left;">
+                    <thead><tr><th>Order</th><th>Product</th><th>Customer</th><th>Rental dates</th><th>Status</th></tr></thead>
+                    <tbody id="vendorRecentOrders"><tr><td colspan="5">Loading…</td></tr></tbody>
+                </table>
             </div>
         </div>
     </section>
