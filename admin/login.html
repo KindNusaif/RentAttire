@@ -14,19 +14,40 @@
                 <h1 style="color:var(--primary); font-family:var(--font-heading);">Admin Portal</h1>
             </div>
             <div class="card p-4">
-                <form onsubmit="event.preventDefault(); alert('Admin Login successful!'); window.location.href='dashboard.html';">
+                <form id="adminLoginForm">
                     <div class="form-group mb-3">
-                        <label>Admin Username</label>
-                        <input type="text" class="form-control" value="admin" required>
+                        <label>Admin Email</label>
+                        <input type="email" id="adminEmail" class="form-control" required>
                     </div>
                     <div class="form-group mb-4">
                         <label>Password</label>
-                        <input type="password" class="form-control" value="admin123" required>
+                        <input type="password" id="adminPassword" class="form-control" required>
                     </div>
                     <button type="submit" class="btn btn-primary" style="width:100%">Secure Login</button>
                 </form>
             </div>
         </div>
     </section>
+<script src="../js/script.js"></script>
+    <script>
+        document.getElementById("adminLoginForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            try {
+                const result = await api("login", { body: {
+                    email: document.getElementById("adminEmail").value.trim(),
+                    password: document.getElementById("adminPassword").value
+                }});
+                if (!result.success) { alert(result.message); return; }
+                if (result.user.role !== "admin") {
+                    await api("logout", { method: "POST" });
+                    alert("This portal is for administrators only.");
+                    return;
+                }
+                window.location.href = "dashboard.html";
+            } catch (error) {
+                alert("Could not reach the server. Is WAMP running?");
+            }
+        });
+    </script>
 </body>
 </html>

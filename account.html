@@ -39,7 +39,7 @@
                             <li><a href="history.html" style="color:var(--text);">Rental History</a></li>
                             <li><a href="tracking.html" style="color:var(--text);">Order Tracking</a></li>
                             <li><a href="cart.html" style="color:var(--text);">My Cart</a></li>
-                            <li><a href="login.html" style="color:var(--error);">Sign Out</a></li>
+                            <li><a href="#" data-signout style="color:var(--error);">Sign Out</a></li>
                         </ul>
                     </div>
                 </div>
@@ -48,13 +48,13 @@
                     <div class="card-body" style="text-align:left;">
                         <h3 class="mb-4">Profile Information</h3>
                         <div style="margin-bottom:15px;">
-                            <strong>Name:</strong> John Doe
+                            <strong>Name:</strong> <span id="profileName">...</span>
                         </div>
                         <div style="margin-bottom:15px;">
-                            <strong>Email:</strong> john.doe@example.com
+                            <strong>Email:</strong> <span id="profileEmail">...</span>
                         </div>
                         <div style="margin-bottom:30px;">
-                            <strong>Phone:</strong> +94 77 123 4567
+                            <strong>Phone:</strong> <span id="profilePhone">...</span>
                         </div>
                         
                         <button class="btn btn-outline">Edit Profile</button>

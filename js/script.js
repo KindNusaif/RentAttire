@@ -1,4 +1,7 @@
-/* API HELPER - used by every page */
+
+/* ==========================================================
+   API HELPERS (used by every page)
+   ========================================================== */
 const API = (window.location.pathname.includes("/admin/") ? "../" : "") + "backend/api/index.php";
 
 async function api(action, options = {}, query = "") {
@@ -12,11 +15,87 @@ async function api(action, options = {}, query = "") {
     const response = await fetch(API + "?action=" + action + query, config);
     return response.json();
 }
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-function saveCart() {
-    localStorage.setItem("cart", JSON.stringify(cart));
+function escapeHtml(text) {
+    return String(text ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+
+function orderCode(orderId) {
+    return "RA" + (1000 + Number(orderId));
+}
+
+const STATUS_INFO = {
+    pending:          { label: "Pending",          badge: "badge-limited" },
+    confirmed:        { label: "Confirmed",        badge: "badge-available" },
+    processing:       { label: "Preparing",        badge: "badge-limited" },
+    ready_for_pickup: { label: "Ready for Pickup", badge: "badge-available" },
+    picked_up:        { label: "Picked Up",        badge: "badge-limited" },
+    returned:         { label: "Returned",         badge: "badge-available" },
+    cancelled:        { label: "Cancelled",        badge: "badge-unavailable" }
+};
+
+function statusBadge(status) {
+    const info = STATUS_INFO[status] || { label: status, badge: "badge-limited" };
+    return '<span class="badge ' + info.badge + '">' + escapeHtml(info.label) + '</span>';
+}
+
+async function loadProducts() {
+    try {
+        const result = await api("products");
+        if (!result.success) return [];
+        return result.products.map(p => {
+            const stock = Number(p.stock);
+            const image = p.image_path || "images/logo.svg";
+            return {
+                id: p.product_id,
+                name: p.product_name,
+                category: p.category_name || "",
+                price: Number(p.price_per_day),
+                deposit: Number(p.deposit_amount),
+                stock: stock,
+                availability: stock === 0 ? "Unavailable" : (stock <= 2 ? "Limited" : "Available"),
+                description: p.description || "",
+                sizes: (p.sizes || "XS,S,M,L,XL").split(",").map(s => s.trim()).filter(Boolean),
+                photos: [image],
+                image: image,
+                shopId: p.shop_id,
+                shopName: p.shop_name || "Rent Attire Collection"
+            };
+        });
+    } catch (error) {
+        return [];
+    }
+}
+
+async function updateHeader() {
+    const link = document.querySelector('.nav-icons a[href="login.html"]');
+    if (!link) return;
+    try {
+        const result = await api("me");
+        if (!result.user) return;
+        const role = result.user.role;
+        link.textContent = "My Account";
+        link.href = role === "admin" ? "admin/dashboard.html" : role === "vendor" ? "vendor-dashboard.html" : "account.html";
+        const out = document.createElement("a");
+        out.href = "#";
+        out.textContent = "Sign out";
+        out.setAttribute("data-signout", "");
+        link.after(out);
+    } catch (error) { /* ignore */ }
+}
+
+function wireSignOut() {
+    document.addEventListener("click", async (event) => {
+        const target = event.target.closest("[data-signout]");
+        if (!target) return;
+        event.preventDefault();
+        try { await api("logout", { method: "POST" }); } catch (error) { /* ignore */ }
+        window.location.href = "index.html";
+    });
+}
+
+
+
 
 
 /* ----------------------------------------------------------
@@ -37,11 +116,17 @@ function toggleMenu() {
 /*
    2) CART COUNT BADGE (top right of the header)
  */
-function updateCartCount() {
+async function updateCartCount() {
     const countEl = document.getElementById("cartCount");
     if (!countEl) return;
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    countEl.textContent = totalItems;
+    try {
+        const result = await api("cart");
+        countEl.textContent = result.success
+            ? result.items.reduce((sum, item) => sum + Number(item.quantity), 0)
+            : 0;
+    } catch (error) {
+        countEl.textContent = 0;
+    }
 }
 
 
@@ -49,24 +134,32 @@ function updateCartCount() {
    3) ADD TO CART
    Called from product-details.html once the dates have been
    validated and the rental price has been calculated.*/
-function addToCart(product, qty, days, pickupDate, returnDate) {
-    const subtotal = product.price * qty * days;
-
-    cart.push({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        quantity: qty,
-        days: days,
-        pickupDate: pickupDate,
-        returnDate: returnDate,
-        subtotal: subtotal
-    });
-
-    saveCart();
-    updateCartCount();
-    alert(product.name + " has been added to your cart!");
-    window.location.href = "cart.html";
+async function addToCart(product, qty, days, pickupDate, returnDate) {
+    try {
+        const session = await api("me");
+        if (!session.user) {
+            alert("Please sign in to rent an item.");
+            window.location.href = "login.html";
+            return;
+        }
+        const result = await api("cart", {
+            body: {
+                product_id: product.id,
+                quantity: qty,
+                pickup_date: pickupDate,
+                return_date: returnDate,
+                size: product.size || ""
+            }
+        });
+        if (!result.success) {
+            alert(result.message);
+            return;
+        }
+        alert(product.name + " has been added to your cart!");
+        window.location.href = "cart.html";
+    } catch (error) {
+        alert("Could not reach the server. Is WAMP running?");
+    }
 }
 
 
@@ -76,11 +169,7 @@ function addToCart(product, qty, days, pickupDate, returnDate) {
    the page immediately - this version is kept for any other
    page that might need it.)
     */
-function removeFromCart(index) {
-    cart.splice(index, 1);
-    saveCart();
-    updateCartCount();
-}
+
 
 
 /* 
@@ -241,7 +330,7 @@ async function validateRegisterForm(event) {
 /* 
    8) CONTACT FORM VALIDATION
     */
-function validateContactForm(event) {
+async function validateContactForm(event) {
     event.preventDefault();
 
     const name = document.getElementById("name").value.trim();
@@ -260,9 +349,19 @@ function validateContactForm(event) {
         return false;
     }
 
-    // Demo only 
-    alert("Message sent! We'll get back to you soon.");
-    document.getElementById("contactForm").reset();
+    try {
+        const result = await api("contact", {
+            body: { name: name, email: email, subject: subject, message: message }
+        });
+        if (!result.success) {
+            alert(result.message);
+            return false;
+        }
+        alert("Message sent! We'll get back to you soon.");
+        document.getElementById("contactForm").reset();
+    } catch (error) {
+        alert("Could not reach the server. Is WAMP running?");
+    }
     return false;
 }
 
@@ -273,41 +372,106 @@ function validateContactForm(event) {
    php/track-order.php. Highlights the current step on the
    timeline based on the order's status.
    ---------------------------------------------------------- */
-const mockOrders = {
-    "RA1001": { product: "Royal Red Saree", statusIndex: 5 }, // Completed
-    "RA1002": { product: "Classic Black Suit", statusIndex: 2 }, // Ready for Pickup
-    "RA1003": { product: "Pearl Bridal Dress", statusIndex: 1 }  // Preparing Attire
-};
 
-const trackingLabels = ["Booking Confirmed", "Preparing Attire", "Ready for Pickup", "Picked Up", "Returned", "Completed"];
 
-function trackOrder(event) {
-    event.preventDefault();
+const trackingLabels = ["Booking Placed", "Confirmed", "Preparing", "Ready for Pickup", "Picked Up", "Returned"];
+const trackingIndex = { pending: 0, confirmed: 1, processing: 2, ready_for_pickup: 3, picked_up: 4, returned: 5 };
 
-    const orderId = document.getElementById("orderId").value.trim().toUpperCase();
-    const resultBox = document.getElementById("trackingResult");
-
-    // Later this will be replaced with:
-    // fetch("php/track-order.php?order_id=" + orderId).then(...)
-
-    const order = mockOrders[orderId];
-
-    if (!order) {
-        resultBox.innerHTML = '<p class="text-muted">No order found with ID "' + orderId + '". Try RA1001, RA1002 or RA1003.</p>';
-        return false;
+function renderTimeline(order) {
+    const items = (order.items || []).map(i => escapeHtml(i.product_name) + (i.size ? " (" + escapeHtml(i.size) + ")" : "")).join(", ");
+    let html = '<h4 class="mb-3">' + orderCode(order.order_id) + ' &middot; ' + items + '</h4>';
+    if (order.status === "cancelled") {
+        return html + '<p>' + statusBadge("cancelled") + ' This order was cancelled.</p>';
     }
-
-    let timelineHtml = '<h4 class="mb-3">' + orderId + ' &middot; ' + order.product + '</h4><div class="timeline">';
+    const current = trackingIndex[order.status] ?? 0;
+    html += '<div class="timeline">';
     trackingLabels.forEach(function (label, i) {
         let stateClass = "";
-        if (i < order.statusIndex) stateClass = "done";
-        if (i === order.statusIndex) stateClass = "current";
-        timelineHtml += '<div class="timeline-step ' + stateClass + '">' + label + '</div>';
+        if (i < current) stateClass = "done";
+        if (i === current) stateClass = "current";
+        html += '<div class="timeline-step ' + stateClass + '">' + label + '</div>';
     });
-    timelineHtml += '</div>';
+    return html + '</div>';
+}
 
-    resultBox.innerHTML = timelineHtml;
+async function trackOrder(event) {
+    if (event) event.preventDefault();
+    const resultBox = document.getElementById("trackingResult");
+    const typed = document.getElementById("orderId").value.trim().toUpperCase().replace("RA", "");
+    try {
+        const result = await api("my-orders");
+        if (!result.success) {
+            resultBox.innerHTML = '<p class="text-muted">Please <a href="login.html" style="color:var(--primary);">sign in</a> to track your orders.</p>';
+            return false;
+        }
+        const order = result.orders.find(o => orderCode(o.order_id) === "RA" + typed);
+        if (!order) {
+            resultBox.innerHTML = '<p class="text-muted">No order found with that ID in your account.</p>';
+            return false;
+        }
+        resultBox.innerHTML = renderTimeline(order);
+    } catch (error) {
+        resultBox.innerHTML = '<p class="text-muted">Could not reach the server.</p>';
+    }
     return false;
+}
+
+async function initTrackingPage() {
+    const resultBox = document.getElementById("trackingResult");
+    if (!resultBox || !document.getElementById("orderId")) return;
+    try {
+        const result = await api("my-orders");
+        if (!result.success) {
+            resultBox.innerHTML = '<p class="text-muted">Please <a href="login.html" style="color:var(--primary);">sign in</a> to track your orders.</p>';
+            return;
+        }
+        if (result.orders.length === 0) {
+            resultBox.innerHTML = '<p class="text-muted">You have no orders yet.</p>';
+            return;
+        }
+        resultBox.innerHTML = renderTimeline(result.orders[0]);
+    } catch (error) { /* ignore */ }
+}
+
+async function renderHistory() {
+    const body = document.getElementById("historyBody");
+    if (!body) return;
+    try {
+        const result = await api("my-orders");
+        if (!result.success) {
+            body.innerHTML = '<tr><td colspan="5">Please <a href="login.html" style="color:var(--primary);">sign in</a> to see your orders.</td></tr>';
+            return;
+        }
+        if (result.orders.length === 0) {
+            body.innerHTML = '<tr><td colspan="5">You have not rented anything yet. <a href="products.html" style="color:var(--primary);">Browse the collection</a>.</td></tr>';
+            return;
+        }
+        body.innerHTML = result.orders.map(order => {
+            const names = order.items.map(i => escapeHtml(i.product_name) + (i.size ? " (" + escapeHtml(i.size) + ")" : "")).join(", ");
+            const first = order.items[0];
+            const dates = first ? first.pickup_date + " to " + first.return_date : "-";
+            return "<tr><td>" + orderCode(order.order_id) + "</td><td>" + names + "</td><td>" + dates +
+                "</td><td>Rs. " + Number(order.grand_total).toLocaleString() + "</td><td>" + statusBadge(order.status) + "</td></tr>";
+        }).join("");
+    } catch (error) {
+        body.innerHTML = '<tr><td colspan="5">Could not reach the server.</td></tr>';
+    }
+}
+
+async function renderAccount() {
+    const nameEl = document.getElementById("profileName");
+    if (!nameEl) return;
+    try {
+        const result = await api("profile");
+        if (!result.success) {
+            window.location.href = "login.html";
+            return;
+        }
+        const p = result.profile;
+        nameEl.textContent = p.first_name + " " + p.last_name;
+        document.getElementById("profileEmail").textContent = p.email;
+        document.getElementById("profilePhone").textContent = p.phone || "-";
+    } catch (error) { /* ignore */ }
 }
 
 
@@ -433,19 +597,21 @@ function getProductFromUrl() {
     return mockProducts.find(product => String(product.id) === String(id));
 }
 
-function renderProductDetails() {
+async function renderProductDetails() {
     const detailLayout = document.getElementById("productDetailLayout");
     const notFound = document.getElementById("productNotFound");
     if (!detailLayout || !notFound) return;
 
-    const product = getProductFromUrl();
+    const products = await loadProducts();
+    const productId = new URLSearchParams(window.location.search).get("id");
+    const product = products.find(item => String(item.id) === String(productId));
     if (!product) {
         detailLayout.style.display = "none";
         notFound.style.display = "block";
         return;
     }
 
-    const shop = shops.find(item => item.id === product.shopId);
+    const shop = { id: product.shopId, name: product.shopName };
     const mainImage = document.getElementById("mainImage");
     const gallery = document.getElementById("productGallery");
     const badge = document.getElementById("productAvailability");
@@ -720,7 +886,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     updateCartCount();
+    updateHeader();
+    wireSignOut();
     renderProductDetails();
+    renderHistory();
+    renderAccount();
+    initTrackingPage();
 
     // Vendor & Shop initialization
     renderVendorProducts();

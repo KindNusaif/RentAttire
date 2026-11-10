@@ -6,18 +6,6 @@
     <title>Product Details | Rent Attire</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .size-standard-btn:hover {
-            border-color: var(--gold) !important;
-            background: var(--gold-pale) !important;
-        }
-        .size-option-btn:hover {
-            border-color: var(--gold) !important;
-            background: var(--gold-pale) !important;
-        }
-        .size-option-btn:focus-visible {
-            outline: 3px solid var(--gold);
-            outline-offset: 2px;
-        }
         .product-thumbnail {
             height: 80px;
             flex: 1;
@@ -87,33 +75,20 @@
                     
                     <p id="productDescription" class="mb-4 text-muted">Product details are loading.</p>
                     
-                    <!-- Size Selection with International Standards -->
-                    <div style="margin-bottom: 32px;">
-                        <h3 style="font-size: 1.3rem; margin-bottom: 16px; color: var(--primary-dark);">Select Size</h3>
-                        
-                        <!-- Size Standard Selector -->
-                        <div style="margin-bottom: 20px;">
-                            <label style="font-weight: 600; margin-bottom: 8px; display: block; color: var(--muted); font-size: 0.9rem;">Size Standard</label>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button type="button" class="size-standard-btn active" data-standard="US" onclick="selectSizeStandard('US')" style="padding: 8px 16px; border: 2px solid var(--gold); background: var(--gold); color: var(--primary-dark); border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: var(--transition);">US</button>
-                                <button type="button" class="size-standard-btn" data-standard="UK" onclick="selectSizeStandard('UK')" style="padding: 8px 16px; border: 2px solid var(--border); background: var(--white); color: var(--text); border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: var(--transition);">UK</button>
-                                <button type="button" class="size-standard-btn" data-standard="EU" onclick="selectSizeStandard('EU')" style="padding: 8px 16px; border: 2px solid var(--border); background: var(--white); color: var(--text); border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: var(--transition);">EU</button>
-                                <button type="button" class="size-standard-btn" data-standard="IN" onclick="selectSizeStandard('IN')" style="padding: 8px 16px; border: 2px solid var(--border); background: var(--white); color: var(--text); border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: var(--transition);">IN</button>
-                            </div>
+                    <div class="size-selection">
+                        <h3 class="size-selection-title">Select Size</h3>
+                        <div class="size-selection-toolbar">
+                            <label for="sizeStandardSelect">Size standard</label>
+                            <select id="sizeStandardSelect" class="form-control size-standard-select" onchange="selectSizeStandard(this.value)">
+                                <option value="US" selected>US</option>
+                                <option value="UK">UK</option>
+                                <option value="EU">EU</option>
+                            </select>
+                            <button type="button" class="size-guide-link" onclick="openSizeGuide()">Size guide</button>
                         </div>
-                        
-                        <!-- Size Options Grid -->
-                        <div id="sizeOptions" class="size-options-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
-                            <!-- Sizes will be populated by JavaScript based on selected standard -->
-                        </div>
-                        
-                        <!-- Size Conversion Guide -->
-                        <div id="sizeConversionGuide" style="margin-top: 20px; padding: 16px; background: var(--cream); border-radius: var(--radius-sm); border-left: 3px solid var(--gold);">
-                            <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--primary);">International Size Conversion</h4>
-                            <div id="conversionTable" style="font-size: 0.85rem; color: var(--muted);">
-                                <!-- Conversion table will be populated by JavaScript -->
-                            </div>
-                        </div>
+                        <div id="sizeOptions" class="size-options-grid" role="group" aria-label="Available sizes"></div>
+                        <p id="selectedSizeDisplay" class="selected-size-text" aria-live="polite">Selected: None</p>
+                        <p id="sizeSelectionError" class="size-selection-error" role="alert" hidden>Please select a size</p>
                     </div>
                     
                     <div class="grid-2 mb-4">
@@ -146,6 +121,33 @@
         </div>
     </section>
 
+    <div id="sizeGuideModal" class="size-guide-modal" role="dialog" aria-modal="true" aria-labelledby="sizeGuideTitle" tabindex="-1" hidden onclick="handleSizeGuideBackdrop(event)">
+        <div class="size-guide-dialog">
+            <div class="size-guide-header">
+                <h2 id="sizeGuideTitle">Size guide</h2>
+                <button type="button" class="size-guide-close" aria-label="Close size guide" onclick="closeSizeGuide()">&times;</button>
+            </div>
+            <p class="size-guide-description">Approximate clothing size conversions.</p>
+            <div class="size-guide-table-wrap">
+                <table class="size-guide-table">
+                    <thead>
+                        <tr><th>US</th><th>UK</th><th>EU</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>XS</td><td>4</td><td>32</td></tr>
+                        <tr><td>S</td><td>6</td><td>34</td></tr>
+                        <tr><td>M</td><td>8</td><td>36</td></tr>
+                        <tr><td>L</td><td>10</td><td>38</td></tr>
+                        <tr><td>XL</td><td>12</td><td>40</td></tr>
+                        <tr><td>2XL</td><td>14</td><td>42</td></tr>
+                        <tr><td>3XL</td><td>16</td><td>44</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <button type="button" class="btn btn-primary size-guide-done" onclick="closeSizeGuide()">Close</button>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer style="background: var(--primary-dark); padding: 48px 0; margin-top: 96px;">
         <div class="container text-center">
@@ -156,121 +158,102 @@
 
     <script src="js/script.js"></script>
     <script>
-        // International Size Standards Data
-        const sizeStandards = {
-            US: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'],
-            UK: ['4', '6', '8', '10', '12', '14', '16'],
-            EU: ['32', '34', '36', '38', '40', '42', '44'],
-            IN: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL']
-        };
-
+        const baseSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
         const sizeConversions = {
-            'XS': { US: 'XS', UK: '4', EU: '32', IN: 'XS' },
-            'S': { US: 'S', UK: '6', EU: '34', IN: 'S' },
-            'M': { US: 'M', UK: '8', EU: '36', IN: 'M' },
-            'L': { US: 'L', UK: '10', EU: '38', IN: 'L' },
-            'XL': { US: 'XL', UK: '12', EU: '40', IN: 'XL' },
-            '2XL': { US: '2XL', UK: '14', EU: '42', IN: '2XL' },
-            '3XL': { US: '3XL', UK: '16', EU: '44', IN: '3XL' }
+            XS: { US: 'XS', UK: '4', EU: '32' },
+            S: { US: 'S', UK: '6', EU: '34' },
+            M: { US: 'M', UK: '8', EU: '36' },
+            L: { US: 'L', UK: '10', EU: '38' },
+            XL: { US: 'XL', UK: '12', EU: '40' },
+            '2XL': { US: '2XL', UK: '14', EU: '42' },
+            '3XL': { US: '3XL', UK: '16', EU: '44' }
         };
 
         let currentStandard = 'US';
         let selectedSize = null;
+        let selectedBaseSize = null;
         let productSizes = null;
 
         function populateProductSizes(sizes) {
-            productSizes = sizes;
+            if (Array.isArray(sizes)) {
+                productSizes = sizes;
+            } else if (typeof sizes === 'string') {
+                try {
+                    const parsedSizes = JSON.parse(sizes);
+                    productSizes = Array.isArray(parsedSizes) ? parsedSizes : sizes.split(',');
+                } catch (error) {
+                    productSizes = sizes.split(',');
+                }
+            } else {
+                productSizes = [];
+            }
+            productSizes = productSizes.map(size => String(size).trim().toUpperCase()).filter(Boolean);
             updateSizeOptions();
         }
 
         function selectSizeStandard(standard) {
+            if (!['US', 'UK', 'EU'].includes(standard)) return;
             currentStandard = standard;
-            selectedSize = null;
-            
-            // Update button styles
-            document.querySelectorAll('.size-standard-btn').forEach(btn => {
-                if (btn.dataset.standard === standard) {
-                    btn.style.background = 'var(--gold)';
-                    btn.style.borderColor = 'var(--gold)';
-                    btn.style.color = 'var(--primary-dark)';
-                } else {
-                    btn.style.background = 'var(--white)';
-                    btn.style.borderColor = 'var(--border)';
-                    btn.style.color = 'var(--text)';
-                }
-            });
-            
-            // Update size options
+            document.getElementById('sizeStandardSelect').value = standard;
             updateSizeOptions();
-            updateConversionGuide();
         }
 
         function updateSizeOptions() {
             const container = document.getElementById('sizeOptions');
-            const sizes = productSizes || sizeStandards[currentStandard];
-            
-            container.innerHTML = sizes.map((size, index) => `
-                <button 
-                    type="button" 
-                    class="size-option-btn" 
-                    data-size="${size}"
-                    data-index="${index}"
-                    onclick="selectSize('${size}')"
-                    style="
-                        padding: 12px 8px;
-                        border: 2px solid var(--border);
-                        background: var(--white);
-                        color: var(--text);
-                        border-radius: var(--radius-sm);
-                        cursor: pointer;
-                        font-weight: 600;
-                        font-size: 0.95rem;
-                        transition: var(--transition);
-                        text-align: center;
-                    "
-                >
-                    ${size}
-                </button>
-            `).join('');
+            if (!container) return;
+            const availableSizes = new Set(productSizes || []);
+            container.innerHTML = baseSizes.map(size => {
+                const inStock = availableSizes.has(size);
+                const label = sizeConversions[size][currentStandard];
+                const isSelected = selectedBaseSize === size;
+                return `<button type="button" class="size-option-btn${isSelected ? ' selected' : ''}" data-size="${size}" onclick="selectSize('${size}')"${inStock ? '' : ' disabled'} aria-pressed="${isSelected}" aria-label="${inStock ? label : `${label}, unavailable`}">${label}</button>`;
+            }).join('');
+            selectedSize = selectedBaseSize && availableSizes.has(selectedBaseSize)
+                ? `${currentStandard} ${sizeConversions[selectedBaseSize][currentStandard]}`
+                : null;
+            if (!selectedSize) selectedBaseSize = null;
+            updateSelectedSizeDisplay();
         }
 
         function selectSize(size) {
-            selectedSize = size;
-            
-            // Update button styles
-            document.querySelectorAll('.size-option-btn').forEach(btn => {
-                if (btn.dataset.size === size) {
-                    btn.style.background = 'var(--primary)';
-                    btn.style.borderColor = 'var(--primary)';
-                    btn.style.color = 'var(--white)';
-                } else {
-                    btn.style.background = 'var(--white)';
-                    btn.style.borderColor = 'var(--border)';
-                    btn.style.color = 'var(--text)';
-                }
+            if (!baseSizes.includes(size) || !(productSizes || []).includes(size)) return;
+            selectedBaseSize = size;
+            selectedSize = `${currentStandard} ${sizeConversions[size][currentStandard]}`;
+            document.querySelectorAll('.size-option-btn').forEach(button => {
+                const isSelected = button.dataset.size === size;
+                button.classList.toggle('selected', isSelected);
+                button.setAttribute('aria-pressed', String(isSelected));
             });
+            document.getElementById('sizeSelectionError').hidden = true;
+            updateSelectedSizeDisplay();
         }
 
-        function updateConversionGuide() {
-            const container = document.getElementById('conversionTable');
-            const baseSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
-            
-            let html = '<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">';
-            html += '<div style="font-weight: 700; color: var(--primary-dark);">US</div>';
-            html += '<div style="font-weight: 700; color: var(--primary-dark);">UK</div>';
-            html += '<div style="font-weight: 700; color: var(--primary-dark);">EU</div>';
-            html += '<div style="font-weight: 700; color: var(--primary-dark);">IN</div>';
-            
-            baseSizes.forEach(size => {
-                const conversion = sizeConversions[size];
-                html += `<div style="padding: 4px 0;">${conversion.US}</div>`;
-                html += `<div style="padding: 4px 0;">${conversion.UK}</div>`;
-                html += `<div style="padding: 4px 0;">${conversion.EU}</div>`;
-                html += `<div style="padding: 4px 0;">${conversion.IN}</div>`;
-            });
-            
-            html += '</div>';
-            container.innerHTML = html;
+        function updateSelectedSizeDisplay() {
+            const display = document.getElementById('selectedSizeDisplay');
+            if (display) display.textContent = `Selected: ${selectedSize || 'None'}`;
+        }
+
+        function openSizeGuide() {
+            const modal = document.getElementById('sizeGuideModal');
+            modal.hidden = false;
+            modal.querySelector('.size-guide-close').focus();
+            document.addEventListener('keydown', handleSizeGuideKeydown);
+        }
+
+        function closeSizeGuide() {
+            const modal = document.getElementById('sizeGuideModal');
+            if (!modal || modal.hidden) return;
+            modal.hidden = true;
+            document.removeEventListener('keydown', handleSizeGuideKeydown);
+            document.querySelector('.size-guide-link').focus();
+        }
+
+        function handleSizeGuideBackdrop(event) {
+            if (event.target === event.currentTarget) closeSizeGuide();
+        }
+
+        function handleSizeGuideKeydown(event) {
+            if (event.key === 'Escape') closeSizeGuide();
         }
 
         function handleAddToCart() {
@@ -279,33 +262,31 @@
                 return;
             }
 
+            if (!selectedSize) {
+                document.getElementById("sizeSelectionError").hidden = false;
+                document.getElementById("sizeSelectionError").scrollIntoView({ behavior: "smooth", block: "nearest" });
+                return;
+            }
+
             const pickupDate = document.getElementById("pickupDate").value;
             const returnDate = document.getElementById("returnDate").value;
-            const qty = parseInt(document.getElementById("qty").value);
-            
-            if(!pickupDate || !returnDate) {
+            const qty = parseInt(document.getElementById("qty").value, 10);
+            if (!pickupDate || !returnDate) {
                 alert("Please select both pickup and return dates.");
                 return;
             }
-            
-            if(!selectedSize) {
-                alert("Please select a size.");
-                return;
-            }
-            
+
             const calc = calculateRentalPrice();
-            if(!calc || calc.days < 1) return; // Validation failed
-            
+            if (!calc || calc.days < 1) return;
+
             const product = window.currentProduct;
             product.size = selectedSize;
             product.sizeStandard = currentStandard;
             addToCart(product, qty, calc.days, pickupDate, returnDate);
         }
 
-        // Initialize size options on page load
         document.addEventListener('DOMContentLoaded', function() {
             updateSizeOptions();
-            updateConversionGuide();
         });
     </script>
 </body>

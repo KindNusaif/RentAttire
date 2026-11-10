@@ -87,10 +87,12 @@ try {
 
         case 'products':
             if ($method === 'GET') {
-                $sql = "SELECT p.product_id,p.shop_id,p.category_id,p.product_name,p.description,p.price_per_day,p.deposit_amount,p.stock,p.image_path,p.status,c.category_name,s.shop_name FROM products p LEFT JOIN categories c ON c.category_id=p.category_id LEFT JOIN shops s ON s.shop_id=p.shop_id";
+                $sql = "SELECT p.product_id,p.shop_id,p.category_id,p.product_name,p.description,p.price_per_day,p.deposit_amount,p.stock,p.sizes,p.image_path,p.status,c.category_name,s.shop_name FROM products p LEFT JOIN categories c ON c.category_id=p.category_id LEFT JOIN shops s ON s.shop_id=p.shop_id";
                 $params = [];
                 if (($_GET['manage'] ?? '') !== '1') {
                     $sql .= " WHERE p.status='active' AND s.status='approved'";
+                    if (isset($_GET['id'])) { $sql .= " AND p.product_id=?"; $params[] = (int)$_GET['id']; }
+                    if (isset($_GET['shop_id'])) { $sql .= " AND p.shop_id=?"; $params[] = (int)$_GET['shop_id']; }
                 } else {
                     $user = requireRole(['vendor','admin']);
                     if ($user['role'] === 'vendor') { $sql .= " WHERE s.vendor_id=?"; $params[] = $user['id']; }
@@ -146,20 +148,20 @@ try {
         case 'cart':
             $user = requireLogin();
             if ($method === 'GET') {
-                $stmt=$pdo->prepare("SELECT ci.cart_item_id,ci.product_id,ci.quantity,ci.pickup_date,ci.return_date,p.product_name,p.price_per_day,p.image_path,DATEDIFF(ci.return_date,ci.pickup_date) AS rental_days,(p.price_per_day*ci.quantity*DATEDIFF(ci.return_date,ci.pickup_date)) AS line_total FROM cart_items ci JOIN products p ON p.product_id=ci.product_id WHERE ci.user_id=? ORDER BY ci.created_at DESC");
+                $stmt=$pdo->prepare("SELECT ci.cart_item_id,ci.product_id,ci.quantity,ci.pickup_date,ci.return_date,ci.size,p.product_name,p.price_per_day,p.image_path,DATEDIFF(ci.return_date,ci.pickup_date) AS rental_days,(p.price_per_day*ci.quantity*DATEDIFF(ci.return_date,ci.pickup_date)) AS line_total FROM cart_items ci JOIN products p ON p.product_id=ci.product_id WHERE ci.user_id=? ORDER BY ci.created_at DESC");
                 $stmt->execute([$user['id']]);
                 jsonResponse(['success'=>true,'items'=>$stmt->fetchAll()]);
             }
             if ($method === 'POST') {
                 $productId=(int)($data['product_id']??0); $qty=max(1,(int)($data['quantity']??1));
-                $pickup=$data['pickup_date']??''; $return=$data['return_date']??'';
+                $pickup=$data['pickup_date']??''; $return=$data['return_date']??''; $size=cleanString($data['size']??'',20);
                 $start=DateTime::createFromFormat('Y-m-d',(string)$pickup); $end=DateTime::createFromFormat('Y-m-d',(string)$return);
                 if (!$start || !$end || $end <= $start || $start < new DateTime('today')) jsonResponse(['success'=>false,'message'=>'Choose valid future pickup and return dates.'],422);
                 $check=$pdo->prepare("SELECT product_id FROM products WHERE product_id=? AND status='active' AND stock>=?");
                 $check->execute([$productId,$qty]);
                 if (!$check->fetch()) jsonResponse(['success'=>false,'message'=>'Product is unavailable or stock is insufficient.'],404);
-                $stmt=$pdo->prepare("INSERT INTO cart_items (user_id,product_id,quantity,pickup_date,return_date) VALUES (?,?,?,?,?)");
-                $stmt->execute([$user['id'],$productId,$qty,$start->format('Y-m-d'),$end->format('Y-m-d')]);
+                $stmt=$pdo->prepare("INSERT INTO cart_items (user_id,product_id,quantity,pickup_date,return_date,size) VALUES (?,?,?,?,?,?)");
+                $stmt->execute([$user['id'],$productId,$qty,$start->format('Y-m-d'),$end->format('Y-m-d'),$size]);
                 jsonResponse(['success'=>true,'message'=>'Added to cart.'],201);
             }
             if ($method === 'DELETE') {
@@ -186,10 +188,10 @@ try {
             }
             $order=$pdo->prepare("INSERT INTO orders (user_id,rental_total,deposit_total,grand_total,status) VALUES (?,?,?,?,'pending')");
             $order->execute([$user['id'],$total,$deposit,$total+$deposit]); $orderId=(int)$pdo->lastInsertId();
-            $line=$pdo->prepare("INSERT INTO order_items (order_id,product_id,product_name,quantity,price_per_day,pickup_date,return_date,line_total) VALUES (?,?,?,?,?,?,?,?)");
+            $line=$pdo->prepare("INSERT INTO order_items (order_id,product_id,product_name,quantity,price_per_day,pickup_date,return_date,line_total,size) VALUES (?,?,?,?,?,?,?,?,?)");
             foreach ($cartItems as $item) {
                 $days=(new DateTime($item['pickup_date']))->diff(new DateTime($item['return_date']))->days;
-                $line->execute([$orderId,$item['product_id'],$item['product_name'],$item['quantity'],$item['price_per_day'],$item['pickup_date'],$item['return_date'],(float)$item['price_per_day']*(int)$item['quantity']*$days]);
+                $line->execute([$orderId,$item['product_id'],$item['product_name'],$item['quantity'],$item['price_per_day'],$item['pickup_date'],$item['return_date'],(float)$item['price_per_day']*(int)$item['quantity']*$days,$item['size']??'']);
             }
             $pdo->prepare("DELETE FROM cart_items WHERE user_id=?")->execute([$user['id']]);
             $pdo->commit();
@@ -238,6 +240,26 @@ try {
         case 'shops':
             $stmt=$pdo->query("SELECT s.shop_id,s.shop_name,s.description,s.address,s.phone,s.email,u.first_name,u.last_name FROM shops s JOIN users u ON u.user_id=s.vendor_id WHERE s.status='approved' ORDER BY s.shop_name");
             jsonResponse(['success'=>true,'shops'=>$stmt->fetchAll()]);
+
+        case 'my-orders':
+            $user=requireLogin();
+            $stmt=$pdo->prepare("SELECT * FROM orders WHERE user_id=? ORDER BY created_at DESC");
+            $stmt->execute([$user['id']]);
+            $orders=$stmt->fetchAll();
+            $itemStmt=$pdo->prepare("SELECT product_name,quantity,price_per_day,pickup_date,return_date,line_total,size FROM order_items WHERE order_id=?");
+            foreach ($orders as &$order) { $itemStmt->execute([$order['order_id']]); $order['items']=$itemStmt->fetchAll(); }
+            unset($order);
+            jsonResponse(['success'=>true,'orders'=>$orders]);
+
+        case 'profile':
+            $user=requireLogin();
+            $stmt=$pdo->prepare("SELECT first_name,last_name,email,phone,role,created_at FROM users WHERE user_id=?");
+            $stmt->execute([$user['id']]);
+            jsonResponse(['success'=>true,'profile'=>$stmt->fetch()]);
+
+        case 'faqs':
+            $stmt=$pdo->query("SELECT faq_id,question,answer FROM faqs WHERE status='published' ORDER BY faq_id");
+            jsonResponse(['success'=>true,'faqs'=>$stmt->fetchAll()]);
 
         default:
             jsonResponse(['success'=>false,'message'=>'Unknown API action.'],404);
