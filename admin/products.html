@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent Attire | Admin Product Management</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body style="background:var(--background);">
+    <header>
+        <div class="container navbar">
+            <a href="dashboard.html" class="logo">
+                <img src="../images/logo.svg" alt="Rent Attire logo" width="30" height="30">
+                Rent Attire Web Master
+            </a>
+            <nav class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="shops.html">Shops</a>
+                <a href="products.html" style="color:var(--gold);">Products</a>
+                <a href="orders.html">Orders</a>
+                <a href="users.html">Users</a>
+                <a href="faqs.html">FAQs</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="../index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">Visit Site</a>
+                <a href="#" data-signout style="margin-left: 10px;">Sign out</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container">
+            <div class="d-flex justify-between align-center mb-4">
+                <div>
+                    <h1>Platform Product Catalog</h1>
+                    <p class="text-muted" style="margin:0;">Manage and curate clothing rental items across all vendor shops.</p>
+                </div>
+                <div class="d-flex" style="gap:10px;">
+                    <input type="text" id="adminSearchInput" class="form-control" placeholder="Search by attire name or shop..." onkeyup="filterAdminProducts()" style="max-width:280px;">
+                    <a href="../vendor-add-product.html" class="btn btn-primary">+ Add Product</a>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem;">
+                    <thead>
+                        <tr style="background: #f9f9f9; border-bottom: 2px solid #eee;">
+                            <th style="padding: 12px;">ID</th>
+                            <th style="padding: 12px;">Product</th>
+                            <th style="padding: 12px;">Shop</th>
+                            <th style="padding: 12px;">Category / Size System</th>
+                            <th style="padding: 12px;">Price / Day</th>
+                            <th style="padding: 12px;">Stock</th>
+                            <th style="padding: 12px;">Status</th>
+                            <th style="padding: 12px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminProductsTable">
+                        <tr><td colspan="8" style="padding:20px; text-align:center;">Loading platform products...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script src="../js/script.js"></script>
+    <script>
+        let allProducts = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await checkAdmin();
+            await loadAdminProducts();
+        });
+
+        async function checkAdmin() {
+            try {
+                const s = await api("me");
+                if (!s.user || s.user.role !== "admin") {
+                    alert("Administrator privileges required.");
+                    window.location.href = "login.html";
+                }
+            } catch(e) {}
+        }
+
+        async function loadAdminProducts() {
+            const tbody = document.getElementById("adminProductsTable");
+            try {
+                const res = await api("products", {}, "&manage=1");
+                allProducts = (res.success && res.products) ? res.products : [];
+                renderTable(allProducts);
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="8" style="padding:20px; text-align:center; color:var(--error);">Failed to load products. Check server.</td></tr>`;
+            }
+        }
+
+        function renderTable(products) {
+            const tbody = document.getElementById("adminProductsTable");
+            if (!products.length) {
+                tbody.innerHTML = `<tr><td colspan="8" style="padding:30px; text-align:center;" class="text-muted">No products found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = products.map(p => {
+                const isActive = p.status === "active";
+                return `
+                <tr id="row-${p.product_id}" style="border-bottom: 1px solid #eee;">
+                    <td style="padding:12px; font-weight:bold;">#${p.product_id}</td>
+                    <td style="padding:12px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="../${escapeHtml(p.image_path || 'images/logo.svg')}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                            <div>
+                                <a href="../product-details.html?id=${p.product_id}" target="_blank" style="font-weight:600; color:var(--primary); text-decoration:none;">${escapeHtml(p.product_name)}</a>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding:12px;">${escapeHtml(p.shop_name || 'RentAttire Collection')}</td>
+                    <td style="padding:12px;">
+                        <span>${escapeHtml(p.category_name || '')}</span><br>
+                        <small class="text-muted">${escapeHtml(p.size_type_name || 'Standard')}</small>
+                    </td>
+                    <td style="padding:12px;">Rs. ${Number(p.price_per_day).toLocaleString()}</td>
+                    <td style="padding:12px;">${p.stock}</td>
+                    <td style="padding:12px;">
+                        <span class="badge ${isActive ? 'badge-available' : 'badge-unavailable'}">${escapeHtml(p.status)}</span>
+                    </td>
+                    <td style="padding:12px;">
+                        <div style="display:flex; gap:6px;">
+                            <button onclick="toggleProductStatus(${p.product_id}, '${isActive ? 'inactive' : 'active'}')" class="btn btn-outline" style="padding:4px 8px; font-size:11px;">
+                                ${isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button onclick="deleteProduct(${p.product_id})" class="btn btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--error); color:var(--error);">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join("");
+        }
+
+        function filterAdminProducts() {
+            const query = document.getElementById("adminSearchInput").value.toLowerCase();
+            const filtered = allProducts.filter(p => 
+                (p.product_name || "").toLowerCase().includes(query) ||
+                (p.shop_name || "").toLowerCase().includes(query) ||
+                (p.category_name || "").toLowerCase().includes(query)
+            );
+            renderTable(filtered);
+        }
+
+        async function toggleProductStatus(id, newStatus) {
+            try {
+                const prod = allProducts.find(p => p.product_id == id);
+                if (!prod) return;
+                const res = await api("products", {
+                    method: "PUT",
+                    body: {
+                        product_name: prod.product_name,
+                        description: prod.description,
+                        price_per_day: prod.price_per_day,
+                        deposit_amount: prod.deposit_amount,
+                        stock: prod.stock,
+                        status: newStatus
+                    }
+                }, "&id=" + id);
+                if (res.success) {
+                    prod.status = newStatus;
+                    renderTable(allProducts);
+                } else {
+                    alert(res.message);
+                }
+            } catch(e) {
+                alert("Could not update status.");
+            }
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm(`Are you sure you want to delete product #${id}?`)) return;
+            try {
+                const res = await api("products", { method: "DELETE" }, "&id=" + id);
+                if (res.success) {
+                    allProducts = allProducts.filter(p => p.product_id != id);
+                    renderTable(allProducts);
+                } else {
+                    alert(res.message);
+                }
+            } catch(e) {
+                alert("Failed to delete product.");
+            }
+        }
+    </script>
+</body>
+</html>
+

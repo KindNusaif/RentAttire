@@ -865,9 +865,91 @@ try {
             $stmt->execute([$user['id']]);
             jsonResponse(['success' => true, 'profile' => $stmt->fetch()]);
 
+        case 'users':
+            $admin = requireRole(['admin']);
+            if ($method === 'GET') {
+                $stmt = $pdo->query("SELECT user_id, first_name, last_name, email, phone, role, status, created_at,
+                    (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.user_id) AS order_count,
+                    (SELECT COUNT(*) FROM shops s WHERE s.vendor_id = u.user_id) AS shop_count
+                    FROM users u ORDER BY user_id DESC");
+                jsonResponse(['success' => true, 'users' => $stmt->fetchAll()]);
+            }
+            if ($method === 'POST' || $method === 'PATCH' || $method === 'PUT') {
+                $targetId = filter_var($data['user_id'] ?? null, FILTER_VALIDATE_INT);
+                $status = cleanString($data['status'] ?? '', 20);
+                $role = cleanString($data['role'] ?? '', 20);
+                if (!$targetId) jsonResponse(['success' => false, 'message' => 'User ID is required.'], 422);
+                if ($targetId === $admin['id'] && $status === 'suspended') {
+                    jsonResponse(['success' => false, 'message' => 'You cannot suspend your own admin account.'], 400);
+                }
+                $updates = [];
+                $params = [];
+                if (in_array($status, ['active', 'suspended', 'pending'], true)) {
+                    $updates[] = 'status = ?';
+                    $params[] = $status;
+                }
+                if (in_array($role, ['customer', 'vendor', 'admin'], true)) {
+                    $updates[] = 'role = ?';
+                    $params[] = $role;
+                }
+                if (empty($updates)) jsonResponse(['success' => false, 'message' => 'No valid status or role update provided.'], 422);
+                $params[] = $targetId;
+                $stmt = $pdo->prepare("UPDATE users SET " . implode(', ', $updates) . " WHERE user_id = ?");
+                $stmt->execute($params);
+                jsonResponse(['success' => true, 'message' => 'User updated successfully.']);
+            }
+            if ($method === 'DELETE') {
+                $targetId = filter_var($_GET['id'] ?? $data['user_id'] ?? null, FILTER_VALIDATE_INT);
+                if (!$targetId) jsonResponse(['success' => false, 'message' => 'User ID is required.'], 422);
+                if ($targetId === $admin['id']) {
+                    jsonResponse(['success' => false, 'message' => 'You cannot delete your own admin account.'], 400);
+                }
+                $stmt = $pdo->prepare("DELETE FROM users WHERE user_id = ?");
+                $stmt->execute([$targetId]);
+                jsonResponse(['success' => true, 'message' => 'User deleted successfully.']);
+            }
+            jsonResponse(['success' => false, 'message' => 'Method not allowed.'], 405);
+
         case 'faqs':
-            $stmt = $pdo->query("SELECT faq_id,question,answer FROM faqs WHERE status='published' ORDER BY faq_id");
-            jsonResponse(['success' => true, 'faqs' => $stmt->fetchAll()]);
+            if ($method === 'GET') {
+                if (($_GET['manage'] ?? '') === '1') {
+                    requireRole(['admin']);
+                    $stmt = $pdo->query("SELECT faq_id, question, answer, status, created_at FROM faqs ORDER BY faq_id DESC");
+                    jsonResponse(['success' => true, 'faqs' => $stmt->fetchAll()]);
+                }
+                $stmt = $pdo->query("SELECT faq_id, question, answer FROM faqs WHERE status='published' ORDER BY faq_id");
+                jsonResponse(['success' => true, 'faqs' => $stmt->fetchAll()]);
+            }
+            if ($method === 'POST') {
+                requireRole(['admin']);
+                $q = cleanString($data['question'] ?? '', 500);
+                $a = cleanString($data['answer'] ?? '', 5000);
+                $st = in_array($data['status'] ?? 'published', ['published', 'draft'], true) ? $data['status'] : 'published';
+                if ($q === '' || $a === '') jsonResponse(['success' => false, 'message' => 'Question and answer are required.'], 422);
+                $stmt = $pdo->prepare("INSERT INTO faqs (question, answer, status) VALUES (?, ?, ?)");
+                $stmt->execute([$q, $a, $st]);
+                jsonResponse(['success' => true, 'message' => 'FAQ added successfully.', 'faq_id' => (int)$pdo->lastInsertId()], 201);
+            }
+            if ($method === 'PUT' || $method === 'PATCH') {
+                requireRole(['admin']);
+                $id = filter_var($_GET['id'] ?? $data['faq_id'] ?? null, FILTER_VALIDATE_INT);
+                $q = cleanString($data['question'] ?? '', 500);
+                $a = cleanString($data['answer'] ?? '', 5000);
+                $st = in_array($data['status'] ?? 'published', ['published', 'draft'], true) ? $data['status'] : 'published';
+                if (!$id || $q === '' || $a === '') jsonResponse(['success' => false, 'message' => 'Valid FAQ ID, question and answer are required.'], 422);
+                $stmt = $pdo->prepare("UPDATE faqs SET question = ?, answer = ?, status = ? WHERE faq_id = ?");
+                $stmt->execute([$q, $a, $st, $id]);
+                jsonResponse(['success' => true, 'message' => 'FAQ updated successfully.']);
+            }
+            if ($method === 'DELETE') {
+                requireRole(['admin']);
+                $id = filter_var($_GET['id'] ?? $data['faq_id'] ?? null, FILTER_VALIDATE_INT);
+                if (!$id) jsonResponse(['success' => false, 'message' => 'Valid FAQ ID is required.'], 422);
+                $stmt = $pdo->prepare("DELETE FROM faqs WHERE faq_id = ?");
+                $stmt->execute([$id]);
+                jsonResponse(['success' => true, 'message' => 'FAQ deleted successfully.']);
+            }
+            jsonResponse(['success' => false, 'message' => 'Method not allowed.'], 405);
 
         default:
             jsonResponse(['success' => false, 'message' => 'Unknown API action.'], 404);

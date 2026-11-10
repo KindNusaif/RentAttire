@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent Attire | User Management</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body style="background:var(--background);">
+    <header>
+        <div class="container navbar">
+            <a href="dashboard.html" class="logo">
+                <img src="../images/logo.svg" alt="Rent Attire logo" width="30" height="30">
+                Rent Attire Web Master
+            </a>
+            <nav class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="shops.html">Shops</a>
+                <a href="products.html">Products</a>
+                <a href="orders.html">Orders</a>
+                <a href="users.html" style="color:var(--gold);">Users</a>
+                <a href="faqs.html">FAQs</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="../index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">Visit Site</a>
+                <a href="#" data-signout style="margin-left: 10px;">Sign out</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container">
+            <div class="d-flex justify-between align-center mb-4">
+                <div>
+                    <h1>User Account Management</h1>
+                    <p class="text-muted" style="margin:0;">Manage customer, vendor, and administrator credentials and access.</p>
+                </div>
+                <div class="d-flex" style="gap:10px;">
+                    <select id="roleFilter" class="form-control" onchange="filterUsers()" style="width:auto;">
+                        <option value="">All Roles</option>
+                        <option value="customer">Customers</option>
+                        <option value="vendor">Vendors</option>
+                        <option value="admin">Administrators</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem;">
+                    <thead>
+                        <tr style="background: #f9f9f9; border-bottom: 2px solid #eee;">
+                            <th style="padding: 12px;">ID</th>
+                            <th style="padding: 12px;">Name</th>
+                            <th style="padding: 12px;">Email & Phone</th>
+                            <th style="padding: 12px;">Role</th>
+                            <th style="padding: 12px;">Activity</th>
+                            <th style="padding: 12px;">Status</th>
+                            <th style="padding: 12px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="7" style="padding:20px; text-align:center;">Loading platform user accounts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script src="../js/script.js"></script>
+    <script>
+        let allUsers = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await checkAdmin();
+            await loadUsers();
+        });
+
+        async function checkAdmin() {
+            try {
+                const s = await api("me");
+                if (!s.user || s.user.role !== "admin") {
+                    alert("Administrator privileges required.");
+                    window.location.href = "login.html";
+                }
+            } catch(e) {}
+        }
+
+        async function loadUsers() {
+            const tbody = document.getElementById("usersTableBody");
+            try {
+                const res = await api("users");
+                allUsers = (res.success && res.users) ? res.users : [];
+                renderUsersTable(allUsers);
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" style="padding:20px; text-align:center; color:var(--error);">Failed to load user accounts.</td></tr>`;
+            }
+        }
+
+        function renderUsersTable(users) {
+            const tbody = document.getElementById("usersTableBody");
+            if (!users.length) {
+                tbody.innerHTML = `<tr><td colspan="7" style="padding:30px; text-align:center;" class="text-muted">No users found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = users.map(u => {
+                const isSuspended = u.status === "suspended";
+                const badgeClass = u.status === "active" ? "badge-available" : (u.status === "pending" ? "badge-limited" : "badge-unavailable");
+
+                return `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding:12px; font-weight:bold;">#${u.user_id}</td>
+                    <td style="padding:12px;"><strong>${escapeHtml(u.first_name)} ${escapeHtml(u.last_name)}</strong></td>
+                    <td style="padding:12px;">
+                        <span>${escapeHtml(u.email)}</span><br>
+                        <small class="text-muted">${escapeHtml(u.phone || 'No phone')}</small>
+                    </td>
+                    <td style="padding:12px;">
+                        <span style="text-transform:capitalize; font-weight:600;">${escapeHtml(u.role)}</span>
+                    </td>
+                    <td style="padding:12px; font-size:12px;">
+                        ${u.role === 'customer' ? `${u.order_count || 0} orders placed` : `${u.shop_count || 0} shop(s)`}
+                    </td>
+                    <td style="padding:12px;">
+                        <span class="badge ${badgeClass}">${escapeHtml(u.status)}</span>
+                    </td>
+                    <td style="padding:12px;">
+                        <div style="display:flex; gap:6px;">
+                            ${isSuspended ? `
+                                <button onclick="updateUserStatus(${u.user_id}, 'active')" class="btn btn-outline" style="padding:4px 8px; font-size:11px; border-color:#2e7d32; color:#2e7d32;">
+                                    Unblock
+                                </button>
+                            ` : `
+                                <button onclick="updateUserStatus(${u.user_id}, 'suspended')" class="btn btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--error); color:var(--error);">
+                                    Block / Suspend
+                                </button>
+                            `}
+                            <button onclick="deleteUser(${u.user_id})" class="btn btn-outline" style="padding:4px 8px; font-size:11px; color:#555;">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join("");
+        }
+
+        function filterUsers() {
+            const role = document.getElementById("roleFilter").value;
+            const filtered = role ? allUsers.filter(u => u.role === role) : allUsers;
+            renderUsersTable(filtered);
+        }
+
+        async function updateUserStatus(userId, newStatus) {
+            try {
+                const res = await api("users", {
+                    method: "POST",
+                    body: { user_id: userId, status: newStatus }
+                });
+                if (res.success) {
+                    const u = allUsers.find(item => item.user_id == userId);
+                    if (u) u.status = newStatus;
+                    renderUsersTable(allUsers);
+                } else {
+                    alert(res.message);
+                }
+            } catch(e) {
+                alert("Failed to update status.");
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm(`Are you sure you want to permanently delete user #${userId}?`)) return;
+            try {
+                const res = await api("users", { method: "DELETE" }, "&id=" + userId);
+                if (res.success) {
+                    allUsers = allUsers.filter(u => u.user_id != userId);
+                    renderUsersTable(allUsers);
+                } else {
+                    alert(res.message);
+                }
+            } catch(e) {
+                alert("Failed to delete user.");
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent Attire | FAQ Management</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body style="background:var(--background);">
+    <header>
+        <div class="container navbar">
+            <a href="dashboard.html" class="logo">
+                <img src="../images/logo.svg" alt="Rent Attire logo" width="30" height="30">
+                Rent Attire Web Master
+            </a>
+            <nav class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="shops.html">Shops</a>
+                <a href="products.html">Products</a>
+                <a href="orders.html">Orders</a>
+                <a href="users.html">Users</a>
+                <a href="faqs.html" style="color:var(--gold);">FAQs</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="../index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">Visit Site</a>
+                <a href="#" data-signout style="margin-left: 10px;">Sign out</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container">
+            <div class="d-flex justify-between align-center mb-4">
+                <div>
+                    <h1>FAQ Management</h1>
+                    <p class="text-muted" style="margin:0;">Add, update, or remove customer help questions and guidance.</p>
+                </div>
+                <button onclick="openAddFaqModal()" class="btn btn-primary">+ Add New FAQ</button>
+            </div>
+
+            <!-- Add/Edit FAQ Card -->
+            <div id="faqFormCard" class="card p-4 mb-4" style="display:none; background:var(--cream);">
+                <div class="d-flex justify-between align-center mb-3">
+                    <h3 id="faqFormTitle">Add New FAQ</h3>
+                    <button type="button" onclick="closeFaqForm()" class="btn btn-outline" style="padding:4px 10px;">Close</button>
+                </div>
+                <form onsubmit="handleSaveFaq(event)">
+                    <input type="hidden" id="faqId">
+                    <div class="form-group mb-3">
+                        <label style="display:block; font-weight:600; font-size:0.9rem; margin-bottom:4px;">Question</label>
+                        <input type="text" id="faqQuestion" class="form-control" placeholder="e.g. How does saree deposit return work?" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label style="display:block; font-weight:600; font-size:0.9rem; margin-bottom:4px;">Answer</label>
+                        <textarea id="faqAnswer" class="form-control" rows="3" placeholder="Provide clear instructions for the customer." required></textarea>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label style="display:block; font-weight:600; font-size:0.9rem; margin-bottom:4px;">Publication Status</label>
+                        <select id="faqStatus" class="form-control" style="max-width:200px;">
+                            <option value="published">Published</option>
+                            <option value="draft">Draft (Hidden)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save FAQ</button>
+                </form>
+            </div>
+
+            <div class="card" style="padding: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem;">
+                    <thead>
+                        <tr style="background: #f9f9f9; border-bottom: 2px solid #eee;">
+                            <th style="padding: 12px; width:50px;">ID</th>
+                            <th style="padding: 12px; width:30%;">Question</th>
+                            <th style="padding: 12px;">Answer</th>
+                            <th style="padding: 12px; width:100px;">Status</th>
+                            <th style="padding: 12px; width:140px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="faqsTableBody">
+                        <tr><td colspan="5" style="padding:20px; text-align:center;">Loading FAQs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script src="../js/script.js"></script>
+    <script>
+        let allFaqs = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await checkAdmin();
+            await loadFaqs();
+        });
+
+        async function checkAdmin() {
+            try {
+                const s = await api("me");
+                if (!s.user || s.user.role !== "admin") {
+                    alert("Administrator privileges required.");
+                    window.location.href = "login.html";
+                }
+            } catch(e) {}
+        }
+
+        async function loadFaqs() {
+            const tbody = document.getElementById("faqsTableBody");
+            try {
+                const res = await api("faqs", {}, "&manage=1");
+                allFaqs = (res.success && res.faqs) ? res.faqs : [];
+                renderFaqs(allFaqs);
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" style="padding:20px; text-align:center; color:var(--error);">Failed to load FAQs.</td></tr>`;
+            }
+        }
+
+        function renderFaqs(faqs) {
+            const tbody = document.getElementById("faqsTableBody");
+            if (!faqs.length) {
+                tbody.innerHTML = `<tr><td colspan="5" style="padding:30px; text-align:center;" class="text-muted">No FAQs recorded. Click "+ Add New FAQ" above.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = faqs.map(f => `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding:12px; font-weight:bold;">#${f.faq_id}</td>
+                    <td style="padding:12px; font-weight:600;">${escapeHtml(f.question)}</td>
+                    <td style="padding:12px; font-size:13px; color:var(--text);">${escapeHtml(f.answer)}</td>
+                    <td style="padding:12px;">
+                        <span class="badge ${f.status === 'published' ? 'badge-available' : 'badge-limited'}">${escapeHtml(f.status)}</span>
+                    </td>
+                    <td style="padding:12px;">
+                        <div style="display:flex; gap:6px;">
+                            <button onclick="editFaq(${f.faq_id})" class="btn btn-outline" style="padding:4px 8px; font-size:11px;">Edit</button>
+                            <button onclick="deleteFaq(${f.faq_id})" class="btn btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--error); color:var(--error);">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        function openAddFaqModal() {
+            document.getElementById("faqId").value = "";
+            document.getElementById("faqQuestion").value = "";
+            document.getElementById("faqAnswer").value = "";
+            document.getElementById("faqStatus").value = "published";
+            document.getElementById("faqFormTitle").textContent = "Add New FAQ";
+            document.getElementById("faqFormCard").style.display = "block";
+            document.getElementById("faqQuestion").focus();
+        }
+
+        function editFaq(id) {
+            const f = allFaqs.find(item => item.faq_id == id);
+            if (!f) return;
+            document.getElementById("faqId").value = f.faq_id;
+            document.getElementById("faqQuestion").value = f.question;
+            document.getElementById("faqAnswer").value = f.answer;
+            document.getElementById("faqStatus").value = f.status;
+            document.getElementById("faqFormTitle").textContent = `Edit FAQ #${f.faq_id}`;
+            document.getElementById("faqFormCard").style.display = "block";
+            document.getElementById("faqQuestion").focus();
+        }
+
+        function closeFaqForm() {
+            document.getElementById("faqFormCard").style.display = "none";
+        }
+
+        async function handleSaveFaq(event) {
+            event.preventDefault();
+            const id = document.getElementById("faqId").value;
+            const q = document.getElementById("faqQuestion").value.trim();
+            const a = document.getElementById("faqAnswer").value.trim();
+            const s = document.getElementById("faqStatus").value;
+
+            if (!q || !a) return;
+
+            try {
+                if (id) {
+                    const res = await api("faqs", {
+                        method: "PUT",
+                        body: { faq_id: parseInt(id, 10), question: q, answer: a, status: s }
+                    });
+                    if (res.success) {
+                        alert("FAQ updated successfully.");
+                        closeFaqForm();
+                        await loadFaqs();
+                    } else {
+                        alert(res.message);
+                    }
+                } else {
+                    const res = await api("faqs", {
+                        method: "POST",
+                        body: { question: q, answer: a, status: s }
+                    });
+                    if (res.success) {
+                        alert("FAQ added successfully.");
+                        closeFaqForm();
+                        await loadFaqs();
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            } catch(e) {
+                alert("Could not save FAQ.");
+            }
+        }
+
+        async function deleteFaq(id) {
+            if (!confirm(`Delete FAQ #${id}?`)) return;
+            try {
+                const res = await api("faqs", { method: "DELETE" }, "&id=" + id);
+                if (res.success) {
+                    allFaqs = allFaqs.filter(item => item.faq_id != id);
+                    renderFaqs(allFaqs);
+                } else {
+                    alert(res.message);
+                }
+            } catch(e) {
+                alert("Failed to delete FAQ.");
+            }
+        }
+    </script>
+</body>
+</html>
+

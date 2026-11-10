@@ -74,6 +74,10 @@
                     <div id="formAlert" style="display:none; padding:12px 16px; border-radius:6px; margin-bottom:16px; font-size:0.9rem;"></div>
 
                     <div class="form-group mb-3">
+                        <label class="form-label" for="productShop">Shop</label>
+                        <select id="productShop" class="form-control" required></select>
+                    </div>
+                    <div class="form-group mb-3">
                         <label class="form-label">Product Name <span style="color:var(--error)">*</span></label>
                         <input type="text" id="productName" class="form-control" placeholder="e.g. Royal Maroon Silk Saree, Classic Navy Suit" required>
                     </div>
@@ -119,11 +123,14 @@
                             <input type="number" id="deposit" class="form-control" placeholder="e.g. 1000" min="0" value="1000">
                         </div>
                     </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label" for="productStatus">Listing status</label>
+                        <select id="productStatus" class="form-control"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+                    </div>
 
                     <div class="form-group mb-3">
-                        <label class="form-label">Product Image URL / Sample Path</label>
-                        <input type="text" id="imagePath" class="form-control" placeholder="e.g. images/saree_royal_red.png, images/suit_classic_black.png" value="images/saree_royal_red.png">
-                        <small class="text-muted">Enter image path relative to web root or paste image URL.</small>
+                        <label class="form-label" for="productImageFiles">Product images (JPEG, PNG or WebP; up to 5 MB each)</label>
+                        <input type="file" id="productImageFiles" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
                     </div>
 
                     <div class="form-group mb-4">
@@ -133,6 +140,19 @@
 
                     <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%; padding:12px; font-size:1rem;">Save & Publish Product</button>
                 </form>
+                <section id="availability" class="mt-4">
+                    <h2>Unavailable rental dates</h2>
+                    <p class="text-muted">Block dates when the product cannot be rented.</p>
+                    <form id="unavailableDatesForm" onsubmit="return handleAvailabilityBlock(event)">
+                        <div class="grid-2">
+                            <div class="form-group"><label for="unavailableStart">From</label><input id="unavailableStart" class="form-control" type="date" required></div>
+                            <div class="form-group"><label for="unavailableEnd">Through</label><input id="unavailableEnd" class="form-control" type="date" required></div>
+                        </div>
+                        <div class="form-group"><label for="unavailableReason">Reason</label><input id="unavailableReason" class="form-control" maxlength="255"></div>
+                        <button class="btn btn-outline" type="submit">Block dates</button>
+                    </form>
+                    <ul id="unavailableDatesList"></ul>
+                </section>
             </div>
         </div>
     </section>
@@ -141,44 +161,126 @@
     <script>
         let sizeTypesList = [];
         let categoriesList = [];
+        let editingProductId = new URLSearchParams(window.location.search).get("id");
 
         document.addEventListener("DOMContentLoaded", async () => {
-            await checkVendorAuth();
-            await loadFormData();
+            if (await checkVendorAuth()) {
+                if (await loadFormData() && editingProductId) await loadExistingProduct(editingProductId);
+                if (editingProductId) {
+                    await loadUnavailableDates(editingProductId);
+                }
+            }
         });
 
         async function checkVendorAuth() {
             try {
                 const session = await api("me");
-                if (!session.user || (session.user.role !== "vendor" && session.user.role !== "admin")) {
-                    alert("Please log in as a vendor to manage products.");
+                if (!session.user || session.user.role !== "vendor") {
+                    showAlert("Please log in as a vendor to manage products.", true);
                     window.location.href = "vendor-login.html";
+                    return false;
                 }
-            } catch(e) {}
+                return true;
+            } catch(error) {
+                showAlert(error.message || "Could not verify your vendor session.", true);
+                return false;
+            }
         }
 
         async function loadFormData() {
-            // Load categories
             try {
-                const catRes = await api("categories");
-                if (catRes.success) {
-                    categoriesList = catRes.categories;
-                    const catSelect = document.getElementById("productCategory");
-                    catSelect.innerHTML = '<option value="">Select Category...</option>' + 
-                        catRes.categories.map(c => `<option value="${c.category_id}">${escapeHtml(c.category_name)}</option>`).join("");
-                }
-            } catch(e) {}
+                const [catRes, stRes, shopRes] = await Promise.all([api("categories"), api("size-types"), api("vendor-shops")]);
+                if (!catRes.success || !stRes.success || !shopRes.success) throw new Error(catRes.message || stRes.message || shopRes.message || "Could not load product form data.");
+                categoriesList = catRes.categories;
+                sizeTypesList = stRes.size_types;
+                document.getElementById("productCategory").innerHTML = '<option value="">Select Category...</option>' +
+                    catRes.categories.map(c => `<option value="${Number(c.category_id)}">${escapeHtml(c.category_name)}</option>`).join("");
+                document.getElementById("productSizeType").innerHTML = '<option value="">Select Clothing Sizing Type...</option>' +
+                    stRes.size_types.map(st => `<option value="${Number(st.size_type_id)}" data-code="${escapeHtml(st.type_code)}">${escapeHtml(st.type_name)} (${escapeHtml(st.category_group)})</option>`).join("");
+                document.getElementById("productShop").innerHTML = (shopRes.shops || []).map(shop =>
+                    `<option value="${Number(shop.shop_id)}">${escapeHtml(shop.shop_name)} (${escapeHtml(shop.status)})</option>`).join("");
+                if (!shopRes.shops.length) throw new Error("Create a shop before adding products.");
+                if (editingProductId) document.getElementById("productShop").disabled = true;
+                return true;
+            } catch(error) {
+                showAlert(error.message || "Could not load product form data.", true);
+                document.getElementById("submitBtn").disabled = true;
+                return false;
+            }
+        }
 
-            // Load size types
+        async function loadExistingProduct(id) {
             try {
-                const stRes = await api("size-types");
-                if (stRes.success) {
-                    sizeTypesList = stRes.size_types;
-                    const stSelect = document.getElementById("productSizeType");
-                    stSelect.innerHTML = '<option value="">Select Clothing Sizing Type...</option>' + 
-                        stRes.size_types.map(st => `<option value="${st.size_type_id}" data-code="${st.type_code}">${escapeHtml(st.type_name)} (${st.category_group})</option>`).join("");
-                }
-            } catch(e) {}
+                const [productResult, variantsResult] = await Promise.all([
+                    api("products", {}, "&manage=1"),
+                    api("product-variants", {}, "&product_id=" + encodeURIComponent(id))
+                ]);
+                const item = productResult.success && productResult.products.find(product => String(product.product_id) === String(id));
+                if (!item || !variantsResult.success) throw new Error(productResult.message || variantsResult.message || "Product not found or access denied.");
+                editingProductId = String(id);
+                document.title = "Rent Attire | Edit Product";
+                document.querySelector("h1").textContent = "Edit Clothing Product";
+                document.getElementById("productName").value = item.product_name;
+                document.getElementById("productCategory").value = item.category_id;
+                document.getElementById("productShop").value = item.shop_id;
+                document.getElementById("productSizeType").value = item.size_type_id || "";
+                document.getElementById("price").value = item.price_per_day;
+                document.getElementById("deposit").value = item.deposit_amount;
+                document.getElementById("description").value = item.description || "";
+                document.getElementById("customMeasurementNotes").value = item.custom_measurement_notes || "";
+                document.getElementById("productStatus").value = item.status === "inactive" ? "inactive" : "active";
+                document.getElementById("productCategory").dispatchEvent(new Event("change"));
+                document.getElementById("productSizeType").value = item.size_type_id || "";
+                onSizeTypeChange(item.size_type_id);
+                populateExistingVariants(item.size_type_id, variantsResult.variants);
+                document.getElementById("submitBtn").textContent = "Save Product Changes";
+                document.getElementById("availability").dataset.productId = id;
+            } catch(error) {
+                showAlert(error.message || "Could not load product for editing.", true);
+                document.getElementById("submitBtn").disabled = true;
+            }
+        }
+
+        function populateExistingVariants(typeId, variants) {
+            const type = sizeTypesList.find(item => String(item.size_type_id) === String(typeId));
+            const code = type ? type.type_code : "";
+            const measurementsFor = variant => {
+                if (typeof variant.custom_measurements !== "string") return variant.custom_measurements || {};
+                try { return JSON.parse(variant.custom_measurements || "{}"); } catch { return {}; }
+            };
+            if (code === "saree_osari" && variants.length) {
+                const variant = variants[0];
+                const measurements = measurementsFor(variant);
+                const length = document.getElementById("cfgSareeLength");
+                const stock = document.getElementById("cfgSareeStock");
+                if (length) length.value = measurements.saree_length || "5.8 metres";
+                if (stock) stock.value = Number(variant.stock);
+                const blouse = measurements.blouse_options || [];
+                document.getElementById("blouseOptReady").checked = blouse.includes("ready_made");
+                document.getElementById("blouseOptPiece").checked = blouse.includes("piece_only");
+                document.getElementById("blouseOptNone").checked = blouse.includes("no_blouse");
+                document.querySelectorAll("input[name='sareeBustCheck']").forEach(input => input.checked = (measurements.ready_made_busts || []).includes(input.value));
+            } else {
+                const config = {
+                    mens_suit: [".suit-enable", ".suit-stock", "data-chest", /Chest\s+(\d+)/i],
+                    womens_dress: [".dress-enable", ".dress-stock", "data-uk", /UK\s+(\d+)/i],
+                    kids_clothing: [".kids-enable", ".kids-stock", "data-age", /^Kids\s+(.+)$/i],
+                    traditional_sri_lankan: [".trad-enable", ".trad-stock", "data-label", null]
+                }[code] || null;
+                if (!config) return;
+                const [checkboxSelector, stockSelector, key, pattern] = config;
+                document.querySelectorAll(checkboxSelector).forEach(input => input.checked = false);
+                document.querySelectorAll(stockSelector).forEach(input => input.value = 0);
+                variants.forEach(variant => {
+                    const match = pattern && variant.variant_label.match(pattern);
+                    const value = match ? match[1] : variant.variant_label;
+                    const checkbox = [...document.querySelectorAll(checkboxSelector)].find(input => input.dataset[key] === value);
+                    if (!checkbox) return;
+                    checkbox.checked = true;
+                    const stockInput = [...document.querySelectorAll(stockSelector)].find(input => input.dataset[key] === value);
+                    if (stockInput) stockInput.value = Number(variant.stock);
+                });
+            }
         }
 
         function onCategorySelect(catId) {
@@ -371,7 +473,6 @@
             const sizeTypeId = parseInt(document.getElementById("productSizeType").value, 10) || null;
             const price = parseFloat(document.getElementById("price").value);
             const deposit = parseFloat(document.getElementById("deposit").value) || 0;
-            const imagePath = document.getElementById("imagePath").value.trim();
             const description = document.getElementById("description").value.trim();
             const customNotes = document.getElementById("customMeasurementNotes").value.trim();
 
@@ -474,16 +575,8 @@
             submitBtn.textContent = "Publishing...";
 
             try {
-                // Get current vendor's shop
-                const shopsRes = await api("shops");
-                const session = await api("me");
-                let shopId = 1;
-                if (shopsRes.success && shopsRes.shops.length > 0) {
-                    shopId = shopsRes.shops[0].shop_id;
-                }
-
                 const payload = {
-                    shop_id: shopId,
+                    shop_id: Number(document.getElementById("productShop").value),
                     category_id: categoryId,
                     size_type_id: sizeTypeId,
                     product_name: name,
@@ -491,18 +584,30 @@
                     price_per_day: price,
                     deposit_amount: deposit,
                     stock: totalStock,
-                    image_path: imagePath || "images/logo.svg",
+                    status: document.getElementById("productStatus").value,
                     custom_measurement_notes: customNotes,
                     variants: variants
                 };
 
-                const res = await api("products", {
-                    method: "POST",
-                    body: payload
-                });
+                const res = editingProductId
+                    ? await api("products", { method: "PUT", body: payload }, "&id=" + encodeURIComponent(editingProductId))
+                    : await api("products", { body: payload });
 
                 if (res.success) {
-                    showAlert("Product created successfully with sizing configuration!", false);
+                    const productId = editingProductId || res.product_id;
+                    const files = document.getElementById("productImageFiles").files;
+                    if (files.length) {
+                        const images = new FormData();
+                        Array.from(files).forEach(file => images.append("images[]", file));
+                        const uploadResult = await api("product-images", { body: images }, "&product_id=" + encodeURIComponent(productId));
+                        if (!uploadResult.success) {
+                            showAlert("Product saved, but image upload failed: " + uploadResult.message, true);
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = editingProductId ? "Save Product Changes" : "Save & Publish Product";
+                            return;
+                        }
+                    }
+                    showAlert(editingProductId ? "Product updated successfully." : "Product created successfully with sizing configuration!", false);
                     setTimeout(() => {
                         window.location.href = "vendor-products.html";
                     }, 1200);
@@ -516,6 +621,43 @@
                 submitBtn.disabled = false;
                 submitBtn.textContent = "Save & Publish Product";
             }
+        }
+
+        async function handleAvailabilityBlock(event) {
+            event.preventDefault();
+            if (!editingProductId) {
+                showAlert("Save the product first, then reopen it to manage rental date blocks.", true);
+                return false;
+            }
+            const result = await api("availability", { body: {
+                product_id: Number(editingProductId),
+                start_date: document.getElementById("unavailableStart").value,
+                end_date: document.getElementById("unavailableEnd").value,
+                reason: document.getElementById("unavailableReason").value.trim()
+            }});
+            showAlert(result.message, !result.success);
+            if (result.success) {
+                document.getElementById("unavailableDatesForm").reset();
+                await loadUnavailableDates(editingProductId);
+            }
+            return false;
+        }
+
+        async function loadUnavailableDates(productId) {
+            const list = document.getElementById("unavailableDatesList");
+            const result = await api("availability", {}, "&product_id=" + encodeURIComponent(productId));
+            if (!result.success) {
+                list.textContent = result.message || "Could not load unavailable dates.";
+                return;
+            }
+            list.innerHTML = result.unavailable_dates.map(item => `<li>${escapeHtml(item.start_date)} – ${escapeHtml(item.end_date)} ${escapeHtml(item.reason || "")}
+                <button type="button" class="btn btn-outline" onclick="removeUnavailableDates(${Number(item.availability_id)})">Remove</button></li>`).join("") || "<li>No date blocks.</li>";
+        }
+
+        async function removeUnavailableDates(id) {
+            const result = await api("availability", { method: "DELETE" }, "&id=" + encodeURIComponent(id));
+            showAlert(result.message, !result.success);
+            if (result.success) await loadUnavailableDates(editingProductId);
         }
 
         function showAlert(msg, isError) {

@@ -1356,9 +1356,18 @@ async function renderAdminOrders() {
     if (!tbody) return;
     const result = await api("orders");
     if (!result.success) {
-        tbody.innerHTML = `<tr><td colspan="6">${escapeHtml(result.message || "Could not load orders.")}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7">${escapeHtml(result.message || "Could not load orders.")}</td></tr>`;
         return;
     }
+    const orderStatuses = [
+        ["pending", "Pending"],
+        ["confirmed", "Confirmed"],
+        ["processing", "Processing"],
+        ["ready_for_pickup", "Ready for Pickup"],
+        ["picked_up", "Picked Up"],
+        ["returned", "Returned"],
+        ["cancelled", "Cancelled"]
+    ];
     tbody.innerHTML = result.orders.length ? result.orders.map(order => `<tr>
         <td>${escapeHtml(orderCode(order.order_id))}<br><small>${escapeHtml(order.created_at || "")}</small></td>
         <td>${escapeHtml(order.first_name)} ${escapeHtml(order.last_name)}<br><small>${escapeHtml(order.email)}</small></td>
@@ -1366,7 +1375,29 @@ async function renderAdminOrders() {
         <td>Rs. ${Number(order.deposit_total).toLocaleString()}</td>
         <td>Rs. ${Number(order.grand_total).toLocaleString()}</td>
         <td>${statusBadge(order.status)}</td>
-    </tr>`).join("") : '<tr><td colspan="6">No orders yet.</td></tr>';
+        <td>
+            <select class="form-control" style="font-size:12px; padding:4px 8px; width:auto;" onchange="updateAdminOrderStatus(${Number(order.order_id)}, this.value)">
+                <option value="">Update...</option>
+                ${orderStatuses.map(([val, label]) => `<option value="${val}" ${val === order.status ? "selected" : ""}>${label}</option>`).join("")}
+            </select>
+        </td>
+    </tr>`).join("") : '<tr><td colspan="7">No orders yet.</td></tr>';
+}
+
+async function updateAdminOrderStatus(orderId, newStatus) {
+    if (!newStatus) return;
+    try {
+        const res = await api("update-order", {
+            method: "POST",
+            body: { order_id: Number(orderId), status: newStatus }
+        });
+        if (!res.success) {
+            alert(res.message || "Failed to update order status.");
+        }
+        renderAdminOrders();
+    } catch(e) {
+        alert("Could not reach the server.");
+    }
 }
 
 /* ----------------------------------------------------------
