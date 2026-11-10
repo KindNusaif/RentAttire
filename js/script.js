@@ -745,13 +745,6 @@ function validateVendorLoginForm(event) {
     return false;
 }
 
-function validateAddProductForm(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    saveVendorProduct(form).catch(error => setPageMessage(form, error.message, true));
-    return false;
-}
-
 function setPageMessage(container, message, isError = false) {
     let node = container.querySelector("[data-form-message]");
     if (!node) {
@@ -949,182 +942,6 @@ function renderShopProfileLegacy() {
     }
 }
 
-
-let productSizeOptions = [];
-
-async function initializeVendorProductForm() {
-    const form = document.getElementById("vendorProductForm");
-    if (!form) return;
-    const [categories, types, shopData] = await Promise.all([api("categories"), api("size-types"), api("vendor-shops")]);
-    if (!categories.success || !types.success || !shopData.success) {
-        setPageMessage(form, "Could not load product form data.", true);
-        return;
-    }
-    document.getElementById("productCategory").innerHTML = '<option value="">Select a category</option>' +
-        categories.categories.map(item => `<option value="${Number(item.category_id)}">${escapeHtml(item.category_name)}</option>`).join("");
-    const sizeType = document.getElementById("productSizeType");
-    sizeType.innerHTML = '<option value="">Select sizing system (optional)</option>' +
-        types.size_types.map(item => `<option value="${Number(item.size_type_id)}">${escapeHtml(item.type_name)}</option>`).join("");
-    document.getElementById("productShop").innerHTML = (shopData.shops || []).map(item =>
-        `<option value="${Number(item.shop_id)}">${escapeHtml(item.shop_name)} (${escapeHtml(item.status)})</option>`).join("");
-    if (!shopData.shops.length) {
-        setPageMessage(form, "Create a shop before adding products.", true);
-        form.querySelector('button[type="submit"]').disabled = true;
-        return;
-    }
-    sizeType.addEventListener("change", loadSizeOptionsForType);
-    form.addEventListener("submit", validateAddProductForm);
-    const id = new URLSearchParams(location.search).get("id");
-    if (!id) return;
-    form.dataset.productId = id;
-    document.getElementById("availability").dataset.productId = id;
-    document.getElementById("productShop").disabled = true;
-    document.getElementById("vendorProductHeading").textContent = "Edit Product";
-    const products = await api("products", {}, "&manage=1");
-    const raw = products.success && products.products.find(item => String(item.product_id) === String(id));
-    if (!raw) {
-        setPageMessage(form, products.message || "Product not found or access denied.", true);
-        form.querySelector('button[type="submit"]').disabled = true;
-        return;
-    }
-    const product = mapProduct(raw);
-    document.getElementById("productName").value = product.name;
-    document.getElementById("productCategory").value = raw.category_id;
-    document.getElementById("productPrice").value = product.price;
-    document.getElementById("productDeposit").value = product.deposit;
-    document.getElementById("productStock").value = product.stock;
-    document.getElementById("productDescription").value = product.description;
-    document.getElementById("productCustomNotes").value = product.customMeasurementNotes;
-    document.getElementById("productSizeType").value = product.sizeTypeId || "";
-    document.getElementById("productStatus").value = product.status === "inactive" ? "inactive" : "active";
-    document.getElementById("productShop").value = product.shopId;
-    await loadSizeOptionsForType();
-    const variants = await api("product-variants", {}, "&product_id=" + encodeURIComponent(id));
-    if (variants.success) variants.variants.forEach(addProductVariantRow);
-    loadProductUnavailableDates(id);
-}
-
-async function loadSizeOptionsForType() {
-    const typeId = document.getElementById("productSizeType").value;
-    if (!typeId) {
-        productSizeOptions = [];
-        return;
-    }
-    const result = await api("size-options", {}, "&size_type_id=" + encodeURIComponent(typeId));
-    if (!result.success) throw new Error(result.message || "Could not load size options.");
-    productSizeOptions = result.size_options;
-    document.querySelectorAll("#productVariantsBody .variant-size-option").forEach(select => {
-        select.innerHTML = '<option value="">Custom</option>' + productSizeOptions.map(item =>
-            `<option value="${Number(item.size_option_id)}" data-label="${escapeHtml(item.display_label)}">${escapeHtml(item.display_label)}</option>`
-        ).join("");
-    });
-}
-
-function addProductVariantRow(variant = {}) {
-    const tbody = document.getElementById("productVariantsBody");
-    if (!tbody) return;
-    const options = productSizeOptions.map(item => `<option value="${Number(item.size_option_id)}" data-label="${escapeHtml(item.display_label)}" ${String(item.size_option_id) === String(variant.size_option_id || "") ? "selected" : ""}>${escapeHtml(item.display_label)}</option>`).join("");
-    let measurements = variant.custom_measurements || "";
-    if (typeof measurements !== "string") measurements = JSON.stringify(measurements);
-    const row = document.createElement("tr");
-    row.innerHTML = `<td><select class="form-control variant-size-option" onchange="useVariantSizeLabel(this)"><option value="">Custom</option>${options}</select>
-        <input class="form-control variant-label" maxlength="160" placeholder="Size / variant label" value="${escapeHtml(variant.variant_label || "")}" required></td>
-        <td><input class="form-control variant-stock" type="number" min="0" step="1" value="${Number(variant.stock || 0)}" required></td>
-        <td><input class="form-control variant-measurements" value="${escapeHtml(measurements === "{}" ? "" : measurements)}" placeholder='{"bust_inches":36}'></td>
-        <td><button type="button" class="btn btn-outline">Remove</button></td>`;
-    row.querySelector("button").addEventListener("click", () => row.remove());
-    tbody.appendChild(row);
-}
-
-function useVariantSizeLabel(select) {
-    const option = select.selectedOptions[0];
-    if (option.dataset.label) select.closest("tr").querySelector(".variant-label").value = option.dataset.label;
-}
-
-async function saveVendorProduct(form) {
-    const variants = [...document.querySelectorAll("#productVariantsBody tr")].map(row => {
-        const measurements = row.querySelector(".variant-measurements").value.trim();
-        if (measurements) {
-            let parsed;
-            try { parsed = JSON.parse(measurements); } catch { throw new Error("Size measurements must be valid JSON."); }
-            if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Size measurements must be a JSON object.");
-        }
-        return {
-            size_option_id: row.querySelector(".variant-size-option").value || null,
-            variant_label: row.querySelector(".variant-label").value.trim(),
-            stock: Number(row.querySelector(".variant-stock").value),
-            custom_measurements: measurements || null
-        };
-    });
-    const body = {
-        shop_id: Number(document.getElementById("productShop").value),
-        category_id: Number(document.getElementById("productCategory").value),
-        product_name: document.getElementById("productName").value.trim(),
-        description: document.getElementById("productDescription").value.trim(),
-        price_per_day: Number(document.getElementById("productPrice").value),
-        deposit_amount: Number(document.getElementById("productDeposit").value || 0),
-        stock: Number(document.getElementById("productStock").value || 0),
-        size_type_id: document.getElementById("productSizeType").value || null,
-        custom_measurement_notes: document.getElementById("productCustomNotes").value.trim(),
-        status: document.getElementById("productStatus").value,
-        variants
-    };
-    const id = form.dataset.productId;
-    const result = id ? await api("products", { method: "PUT", body }, "&id=" + encodeURIComponent(id)) : await api("products", { body });
-    if (!result.success) {
-        setPageMessage(form, result.message || "Could not save product.", true);
-        return;
-    }
-    const productId = id || result.product_id;
-    const files = document.getElementById("productImages").files;
-    if (files.length) {
-        const images = new FormData();
-        [...files].forEach(file => images.append("images[]", file));
-        const uploaded = await api("product-images", { body: images }, "&product_id=" + encodeURIComponent(productId));
-        if (!uploaded.success) {
-            setPageMessage(form, "Product saved, but image upload failed: " + uploaded.message, true);
-            return;
-        }
-    }
-    window.location.href = "vendor-products.html";
-}
-
-async function loadProductUnavailableDates(id) {
-    const list = document.getElementById("unavailableDatesList");
-    if (!list) return;
-    const result = await api("availability", {}, "&product_id=" + encodeURIComponent(id));
-    if (!result.success) {
-        list.textContent = result.message || "Could not load unavailable dates.";
-        return;
-    }
-    list.innerHTML = result.unavailable_dates.map(item => `<li>${escapeHtml(item.start_date)} – ${escapeHtml(item.end_date)} ${escapeHtml(item.reason || "")}
-        <button type="button" onclick="removeProductUnavailableDates(${Number(item.availability_id)},${Number(id)})">Remove</button></li>`).join("") || "<li>No date blocks.</li>";
-}
-
-async function addProductUnavailableDates(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const id = document.getElementById("availability").dataset.productId;
-    if (!id) return setPageMessage(form, "Save the product before blocking rental dates.", true);
-    const result = await api("availability", { body: {
-        product_id: Number(id),
-        start_date: document.getElementById("unavailableStart").value,
-        end_date: document.getElementById("unavailableEnd").value,
-        reason: document.getElementById("unavailableReason").value.trim()
-    }});
-    setPageMessage(form, result.message, !result.success);
-    if (result.success) {
-        form.reset();
-        loadProductUnavailableDates(id);
-    }
-    return false;
-}
-
-async function removeProductUnavailableDates(id, productId) {
-    const result = await api("availability", { method: "DELETE" }, "&id=" + encodeURIComponent(id));
-    if (!result.success) alert(result.message || "Could not remove the date block.");
-    loadProductUnavailableDates(productId);
-}
 
 async function loadVendorProfile() {
     const form = document.getElementById("vendorShopForm");
@@ -1457,7 +1274,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderVendorOrders();
     renderVendorDashboard();
     loadVendorProfile();
-    initializeVendorProductForm();
     renderAdminOverview();
     renderAdminManagement();
     renderAdminOrders();

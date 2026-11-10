@@ -601,6 +601,9 @@
                         Array.from(files).forEach(file => images.append("images[]", file));
                         const uploadResult = await api("product-images", { body: images }, "&product_id=" + encodeURIComponent(productId));
                         if (!uploadResult.success) {
+                            editingProductId = String(productId);
+                            document.getElementById("productShop").disabled = true;
+                            document.getElementById("availability").dataset.productId = editingProductId;
                             showAlert("Product saved, but image upload failed: " + uploadResult.message, true);
                             submitBtn.disabled = false;
                             submitBtn.textContent = editingProductId ? "Save Product Changes" : "Save & Publish Product";
@@ -614,12 +617,12 @@
                 } else {
                     showAlert(res.message || "Failed to create product.", true);
                     submitBtn.disabled = false;
-                    submitBtn.textContent = "Save & Publish Product";
+                    submitBtn.textContent = editingProductId ? "Save Product Changes" : "Save & Publish Product";
                 }
             } catch (err) {
-                showAlert("Could not connect to the server. Is WAMP running?", true);
+                showAlert(err.message || "Could not connect to the server. Is WAMP running?", true);
                 submitBtn.disabled = false;
-                submitBtn.textContent = "Save & Publish Product";
+                submitBtn.textContent = editingProductId ? "Save Product Changes" : "Save & Publish Product";
             }
         }
 
