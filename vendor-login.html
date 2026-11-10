@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent Attire | Vendor Login</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container navbar">
+            <a href="index.html" class="logo">
+                <img src="images/logo.svg" alt="Rent Attire logo" width="30" height="30">
+                Rent Attire
+            </a>
+            <nav class="nav-links">
+                <a href="vendor-register.html">Register Shop</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container" style="max-width:500px;">
+            <div class="text-center mb-4">
+                <img src="images/logo-full.svg" alt="Rent Attire" style="height: 48px; margin: 0 auto 16px;">
+            </div>
+            <div class="card p-4">
+                <h2 class="text-center mb-4">Vendor Login</h2>
+                <form id="vendorLoginForm" onsubmit="return validateVendorLoginForm(event)">
+                    <div class="form-group mb-3">
+                        <label>Email Address</label>
+                        <input type="email" id="email" class="form-control" value="vendor@demo.com" required>
+                    </div>
+                    <div class="form-group mb-4">
+                        <label>Password</label>
+                        <input type="password" id="password" class="form-control" value="password123" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
+                    <p class="text-center mt-3 text-muted">Don't have a vendor account? <a href="vendor-register.html">List your shop</a></p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

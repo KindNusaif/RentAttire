@@ -1,0 +1,8 @@
+<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="500" fill="#8C2E4E"/>
+  <circle cx="300" cy="90" r="90" fill="#C9A227" opacity="0.25"/>
+  <path d="M120 480 L120 220 Q120 150 200 150 Q280 150 280 220 L280 480 Z" fill="#FFF9F0" opacity="0.9"/>
+  <path d="M170 150 Q200 100 230 150" stroke="#C9A227" stroke-width="6" fill="none"/>
+  <circle cx="200" cy="120" r="22" fill="#FFF9F0"/>
+  <text x="200" y="470" font-family="Georgia, serif" font-size="16" fill="#42152A" text-anchor="middle">RentAttire</text>
+</svg>

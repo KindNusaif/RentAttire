@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent Attire | Dress the Moment. Rent the Elegance.</title>
+    <meta name="description" content="Rent Attire — Sri Lanka's premium multi-vendor attire rental marketplace. Browse sarees, bridal wear, suits and more from local shops.">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    
+    <header>
+        <div class="container navbar">
+            <a href="index.html" class="logo">
+                <img src="images/logo.svg" alt="Rent Attire logo" width="32" height="32">
+                Rent Attire
+            </a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
+            </button>
+            <nav class="nav-links" id="navLinks">
+                <a href="index.html" class="active">Home</a>
+                <a href="products.html">Collection</a>
+                <a href="shops.html">Shops</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="vendor-register.html" class="btn btn-gold btn-sm">List Your Shop</a>
+                <a href="products.html" title="Search">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </a>
+                <a href="cart.html" title="Cart">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    <span id="cartCount" class="badge badge-available" style="position:relative;top:-10px;right:10px;font-size:9px;padding:3px 7px;min-width:18px;text-align:center;">0</span>
+                </a>
+                <a href="login.html" title="Login">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    
+    <section class="hero">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 32px;">
+                <img src="images/logo-full.svg" alt="Rent Attire" style="height: 80px; margin: 0 auto;">
+            </div>
+            <span class="hero-eyebrow">Sri Lanka's Premier Rental Marketplace</span>
+            <span class="hero-line"></span>
+            <h1>Dress the <em>Moment.</em><br>Rent the Elegance.</h1>
+            <p>Discover exquisite attire for weddings, galas and life's finest occasions — beautifully sourced from our network of curated local shops.</p>
+            <div class="hero-buttons">
+                <a href="products.html" class="btn btn-gold">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 3l14 9-14 9V3z"/></svg>
+                    Explore Collection
+                </a>
+                <a href="shops.html" class="btn btn-outline-white">Browse All Shops</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CATEGORIES -->
+    <section class="section" style="background: var(--cream);">
+        <div class="container">
+            <div class="text-center" style="margin-bottom: 56px;">
+                <span class="section-eyebrow">Curated Categories</span>
+                <h2 class="section-title">Shop by Occasion</h2>
+                <div class="divider-ornament"><span>✦</span></div>
+                <p class="section-subtitle">Whether it's a grand wedding or an elegant soirée — find the perfect attire for every chapter of your story.</p>
+            </div>
+            <div class="grid-4">
+                <div class="card category-card reveal">
+                    <div class="card-img">
+                        <img src="images/bridal_model.png" alt="Bridal Wear">
+                        <div class="cat-overlay">
+                            <h3 class="cat-title">Bridal Wear</h3>
+                            <a href="products.html" class="cat-btn">
+                                Explore
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card category-card reveal" style="transition-delay:0.1s;">
+                    <div class="card-img">
+                        <img src="images/saree_royal_red.png" alt="Sarees">
+                        <div class="cat-overlay">
+                            <h3 class="cat-title">Sarees</h3>
+                            <a href="products.html" class="cat-btn">
+                                Explore
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card category-card reveal" style="transition-delay:0.2s;">
+                    <div class="card-img">
+                        <img src="images/suit_classic_black.png" alt="Suits">
+                        <div class="cat-overlay">
+                            <h3 class="cat-title">Suits</h3>
+                            <a href="products.html" class="cat-btn">
+                                Explore
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card category-card reveal" style="transition-delay:0.3s;">
+                    <div class="card-img">
+                        <img src="images/evening_dress.png" alt="Dresses">
+                        <div class="cat-overlay">
+                            <h3 class="cat-title">Dresses</h3>
+                            <a href="products.html" class="cat-btn">
+                                Explore
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+    <section id="how-it-works" class="section" style="background: var(--white);">
+        <div class="container">
+            <div class="text-center" style="margin-bottom: 64px;">
+                <span class="section-eyebrow">Simple Process</span>
+                <h2 class="section-title">How It Works</h2>
+                <div class="divider-ornament"><span>✦</span></div>
+            </div>
+            <div class="how-grid">
+                <div class="how-step reveal">
+                    <div class="how-step-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    </div>
+                    <span class="how-step-num">01</span>
+                    <h4>Browse</h4>
+                    <p>Explore hundreds of premium attire from our curated partner shops across Sri Lanka.</p>
+                </div>
+                <div class="how-step reveal" style="transition-delay:0.12s;">
+                    <div class="how-step-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    </div>
+                    <span class="how-step-num">02</span>
+                    <h4>Select</h4>
+                    <p>Choose your perfect outfit and pick your rental dates — we handle the rest.</p>
+                </div>
+                <div class="how-step reveal" style="transition-delay:0.24s;">
+                    <div class="how-step-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    </div>
+                    <span class="how-step-num">03</span>
+                    <h4>Book</h4>
+                    <p>Confirm your rental request instantly and receive your booking confirmation.</p>
+                </div>
+                <div class="how-step reveal" style="transition-delay:0.36s;">
+                    <div class="how-step-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    </div>
+                    <span class="how-step-num">04</span>
+                    <h4>Return</h4>
+                    <p>Enjoy your event, then simply return the attire on the agreed date. Simple.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+    <section class="section" style="background: var(--background);">
+        <div class="container">
+            <div class="text-center" style="margin-bottom: 56px;">
+                <span class="section-eyebrow">Curated For You</span>
+                <h2 class="section-title">Our Featured Collection</h2>
+                <div class="divider-ornament"><span>✦</span></div>
+                <p class="section-subtitle">Hand-picked premium attire from our top-rated partner shops across Sri Lanka.</p>
+            </div>
+            <div class="grid-3">
+
+                <!-- Card 1 -->
+                <div class="card featured-card reveal" data-product-id="1">
+                    <div class="card-img">
+                        <img src="images/saree_royal_red.png" alt="Royal Red Saree">
+                        <a href="product-details.html?id=1" class="btn btn-gold btn-sm card-overlay-btn">View Details</a>
+                    </div>
+                    <div class="card-body text-center">
+                        <span class="badge badge-available mb-2">Available</span>
+                        <p class="shop-label">Colombo Silk House &nbsp;·&nbsp; Sarees</p>
+                        <h3 class="card-title">Royal Red Saree</h3>
+                        <div class="price">Rs. 2,500 <span style="font-size:0.8rem;font-family:var(--font-body);font-weight:400;color:var(--muted);">/ day</span></div>
+                        <a href="product-details.html?id=1" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="card featured-card reveal" data-product-id="2" style="transition-delay:0.1s;">
+                    <div class="card-img">
+                        <img src="images/suit_classic_black.png" alt="Classic Black Suit">
+                        <a href="product-details.html?id=2" class="btn btn-gold btn-sm card-overlay-btn">View Details</a>
+                    </div>
+                    <div class="card-body text-center">
+                        <span class="badge badge-available mb-2">Available</span>
+                        <p class="shop-label">Kandy Formal Wear &nbsp;·&nbsp; Suits</p>
+                        <h3 class="card-title">Classic Black Suit</h3>
+                        <div class="price">Rs. 3,000 <span style="font-size:0.8rem;font-family:var(--font-body);font-weight:400;color:var(--muted);">/ day</span></div>
+                        <a href="product-details.html?id=2" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="card featured-card reveal" data-product-id="3" style="transition-delay:0.2s;">
+                    <div class="card-img">
+                        <img src="images/bridal_model.png" alt="Pearl Bridal Dress">
+                        <a href="product-details.html?id=3" class="btn btn-gold btn-sm card-overlay-btn">View Details</a>
+                    </div>
+                    <div class="card-body text-center">
+                        <span class="badge badge-limited mb-2">Limited</span>
+                        <p class="shop-label">Colombo Silk House &nbsp;·&nbsp; Bridal Wear</p>
+                        <h3 class="card-title">Pearl Bridal Dress</h3>
+                        <div class="price">Rs. 5,000 <span style="font-size:0.8rem;font-family:var(--font-body);font-weight:400;color:var(--muted);">/ day</span></div>
+                        <a href="product-details.html?id=3" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="card featured-card reveal" data-product-id="4" style="transition-delay:0.05s;">
+                    <div class="card-img">
+                        <img src="images/evening_dress.png" alt="Emerald Evening Dress">
+                        <a href="product-details.html?id=4" class="btn btn-gold btn-sm card-overlay-btn">View Details</a>
+                    </div>
+                    <div class="card-body text-center">
+                        <span class="badge badge-available mb-2">Available</span>
+                        <p class="shop-label">Colombo Silk House &nbsp;·&nbsp; Dresses</p>
+                        <h3 class="card-title">Emerald Evening Dress</h3>
+                        <div class="price">Rs. 3,500 <span style="font-size:0.8rem;font-family:var(--font-body);font-weight:400;color:var(--muted);">/ day</span></div>
+                        <a href="product-details.html?id=4" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="card featured-card reveal" data-product-id="5" style="transition-delay:0.15s;">
+                    <div class="card-img" style="background:#f7f0e8;">
+                        <img src="images/saree_model.png" alt="Traditional Gold Saree" style="object-position: center 20%;">
+                        <a href="product-details.html?id=5" class="btn btn-gold btn-sm card-overlay-btn">View Details</a>
+                    </div>
+                    <div class="card-body text-center">
+                        <span class="badge badge-available mb-2">Available</span>
+                        <p class="shop-label">Colombo Silk House &nbsp;·&nbsp; Sarees</p>
+                        <h3 class="card-title">Traditional Gold Saree</h3>
+                        <div class="price">Rs. 2,800 <span style="font-size:0.8rem;font-family:var(--font-body);font-weight:400;color:var(--muted);">/ day</span></div>
+                        <a href="product-details.html?id=5" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <!-- Card 6 -->
+                <div class="card featured-card reveal" data-product-id="6" style="transition-delay:0.25s;">
+                    <div class="card-img" style="background:#1a1f2e;">
+                        <img src="images/suit_model.png" alt="Midnight Blue Suit" style="object-position: center 10%;">
+                        <a href="product-details.html?id=6" class="btn btn-gold btn-sm card-overlay-btn">View Details</a>
+                    </div>
+                    <div class="card-body text-center">
+                        <span class="badge badge-unavailable mb-2">Unavailable</span>
+                        <p class="shop-label">Kandy Formal Wear &nbsp;·&nbsp; Suits</p>
+                        <h3 class="card-title">Midnight Blue Suit</h3>
+                        <div class="price" style="color:var(--muted);">Rs. 3,200 <span style="font-size:0.8rem;font-family:var(--font-body);font-weight:400;">/ day</span></div>
+                        <a href="product-details.html?id=6" class="btn btn-outline" style="width:100%;opacity:0.35;cursor:not-allowed;">Currently Unavailable</a>
+                    </div>
+                </div>
+
+            </div>
+            <div class="text-center" style="margin-top: 60px; display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+                <a href="products.html" class="btn btn-primary">View Full Collection</a>
+                <a href="shops.html" class="btn btn-outline">Browse All Shops</a>
+            </div>
+        </div>
+    </section>
+
+    
+    <section class="section" style="background: linear-gradient(135deg, var(--primary-dark) 0%, #4a0f28 100%); padding: 80px 0;">
+        <div class="container text-center">
+            <span class="section-eyebrow" style="color:var(--gold);">For Shop Owners</span>
+            <h2 class="section-title" style="color:var(--white); font-size:2.6rem;">Grow Your Rental Business</h2>
+            <p style="color:rgba(255,255,255,0.65); max-width:540px; margin: 0 auto 40px; font-size:1.05rem; line-height:1.8;">
+                Join our marketplace, list your attire, and reach thousands of customers across Sri Lanka — completely free to start.
+            </p>
+            <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+                <a href="vendor-register.html" class="btn btn-gold">Register Your Shop</a>
+                <a href="vendor-login.html" class="btn btn-outline-white">Vendor Login</a>
+            </div>
+        </div>
+    </section>
+
+    
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <div style="margin-bottom: 16px;">
+                        <img src="images/logo-dark-bg.svg" alt="Rent Attire" style="height: 48px;">
+                    </div>
+                    <p class="footer-tagline">Dress the Moment.<br>Rent the Elegance.</p>
+                    <p style="font-size:0.82rem; color:rgba(255,255,255,0.35);">Sri Lanka's premier multi-vendor<br>clothing rental marketplace.</p>
+                </div>
+                <div>
+                    <h4 class="footer-heading">Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="products.html">Collection</a></li>
+                        <li><a href="shops.html">Shops</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="footer-heading">Vendors</h4>
+                    <ul class="footer-links">
+                        <li><a href="vendor-register.html">List Your Shop</a></li>
+                        <li><a href="vendor-login.html">Vendor Login</a></li>
+                        <li><a href="admin/login.html">Admin</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="footer-heading">Customer</h4>
+                    <ul class="footer-links">
+                        <li><a href="account.html">My Account</a></li>
+                        <li><a href="history.html">Rental History</a></li>
+                        <li><a href="tracking.html">Track Order</a></li>
+                        <li><a href="cart.html">My Cart</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="footer-heading">Contact</h4>
+                    <p style="color:rgba(255,255,255,0.55); font-size:0.88rem; line-height:2;">
+                        support@rentattire.com<br>
+                        0711193730<br>
+                        Colombo, Sri Lanka
+                    </p>
+                    <div style="margin-top:16px;">
+                        <a href="privacy.html" style="font-size:0.78rem; color:rgba(255,255,255,0.35); margin-right:14px;">Privacy</a>
+                        <a href="terms.html" style="font-size:0.78rem; color:rgba(255,255,255,0.35);">Terms</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>&copy; 2026 RentAttire. All Rights Reserved.</span>
+                <span style="font-size:0.78rem; letter-spacing:0.5px;">Premium Attire Rental · Sri Lanka</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        // Scroll reveal
+        const reveals = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12 });
+        reveals.forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Collection | Rent Attire</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container navbar">
+            <a href="index.html" class="logo">Rent Attire</a>
+            <button class="hamburger" id="hamburger">☰</button>
+            <nav class="nav-links" id="navLinks">
+                <a href="index.html">Home</a>
+                <a href="products.html">Collection</a>
+                <a href="shops.html">Shops</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="vendor-register.html" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; box-shadow: none;">List Your Shop</a>
+                <a href="cart.html">Cart <span id="cartCount" class="badge badge-available">0</span></a>
+                <a href="login.html">Login</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="section-title">Our Collection</h1>
+            
+            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px; margin-bottom:40px;">
+                <div style="flex:1; min-width:200px;">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search attire..." onkeyup="filterProducts()">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <select id="categoryFilter" class="form-control" onchange="filterProducts()">
+                        <option value="All">All Categories</option>
+                        <option value="Sarees">Sarees</option>
+                        <option value="Bridal Wear">Bridal Wear</option>
+                        <option value="Suits">Suits</option>
+                        <option value="Dresses">Dresses</option>
+                    </select>
+                    <select id="sortFilter" class="form-control" onchange="filterProducts()">
+                        <option value="default">Default Sorting</option>
+                        <option value="priceLowHigh">Price: Low to High</option>
+                        <option value="priceHighLow">Price: High to Low</option>
+                        <option value="nameAZ">Name: A-Z</option>
+                    </select>
+                </div>
+            </div>
+
+            <p id="resultsCount" class="text-muted mb-3">Showing all attire</p>
+
+            <div class="grid-3" id="productsContainer">
+                <!-- Static cards with data attributes power the search/filter/sort in the inline script below -->
+
+                <div class="card product-card" data-product-id="1" data-category="Sarees" data-price="2500" data-name="Royal Red Saree">
+                    <div class="card-img"><img src="images/saree_royal_red.png" alt="Royal Red Saree"></div>
+                    <div class="card-body">
+                        <span class="badge badge-available mb-2">Available</span>
+                        <p style="font-size:12px; color:var(--muted)">Sarees &middot; <a href="shop-profile.html?id=1" style="color:inherit; text-decoration:none;">Colombo Silk House</a></p>
+                        <h3 class="card-title">Royal Red Saree</h3>
+                        <div class="price">Rs. 2,500 / day</div>
+                        <a href="product-details.html?id=1" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <div class="card product-card" data-product-id="2" data-category="Suits" data-price="3000" data-name="Classic Black Suit">
+                    <div class="card-img"><img src="images/suit_classic_black.png" alt="Classic Black Suit"></div>
+                    <div class="card-body">
+                        <span class="badge badge-available mb-2">Available</span>
+                        <p style="font-size:12px; color:var(--muted)">Suits &middot; <a href="shop-profile.html?id=2" style="color:inherit; text-decoration:none;">Kandy Formal Wear</a></p>
+                        <h3 class="card-title">Classic Black Suit</h3>
+                        <div class="price">Rs. 3,000 / day</div>
+                        <a href="product-details.html?id=2" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <div class="card product-card" data-product-id="3" data-category="Bridal Wear" data-price="5000" data-name="Pearl Bridal Dress">
+                    <div class="card-img"><img src="images/bridal_model.png" alt="Pearl Bridal Dress"></div>
+                    <div class="card-body">
+                        <span class="badge badge-limited mb-2">Limited</span>
+                        <p style="font-size:12px; color:var(--muted)">Bridal Wear &middot; <a href="shop-profile.html?id=1" style="color:inherit; text-decoration:none;">Colombo Silk House</a></p>
+                        <h3 class="card-title">Pearl Bridal Dress</h3>
+                        <div class="price">Rs. 5,000 / day</div>
+                        <a href="product-details.html?id=3" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <div class="card product-card" data-product-id="4" data-category="Dresses" data-price="3500" data-name="Emerald Evening Dress">
+                    <div class="card-img"><img src="images/evening_dress.png" alt="Emerald Evening Dress"></div>
+                    <div class="card-body">
+                        <span class="badge badge-available mb-2">Available</span>
+                        <p style="font-size:12px; color:var(--muted)">Dresses &middot; <a href="shop-profile.html?id=1" style="color:inherit; text-decoration:none;">Colombo Silk House</a></p>
+                        <h3 class="card-title">Emerald Evening Dress</h3>
+                        <div class="price">Rs. 3,500 / day</div>
+                        <a href="product-details.html?id=4" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <div class="card product-card" data-product-id="5" data-category="Sarees" data-price="2800" data-name="Traditional Gold Saree">
+                    <div class="card-img"><img src="images/saree_model.png" alt="Traditional Gold Saree"></div>
+                    <div class="card-body">
+                        <span class="badge badge-available mb-2">Available</span>
+                        <p style="font-size:12px; color:var(--muted)">Sarees &middot; <a href="shop-profile.html?id=1" style="color:inherit; text-decoration:none;">Colombo Silk House</a></p>
+                        <h3 class="card-title">Traditional Gold Saree</h3>
+                        <div class="price">Rs. 2,800 / day</div>
+                        <a href="product-details.html?id=5" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <div class="card product-card" data-product-id="6" data-category="Suits" data-price="3200" data-name="Midnight Blue Suit">
+                    <div class="card-img"><img src="images/suit_model.png" alt="Midnight Blue Suit"></div>
+                    <div class="card-body">
+                        <span class="badge badge-unavailable mb-2">Unavailable</span>
+                        <p style="font-size:12px; color:var(--muted)">Suits &middot; <a href="shop-profile.html?id=2" style="color:inherit; text-decoration:none;">Kandy Formal Wear</a></p>
+                        <h3 class="card-title">Midnight Blue Suit</h3>
+                        <div class="price">Rs. 3,200 / day</div>
+                        <a href="product-details.html?id=6" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <div class="card product-card" data-product-id="7" data-category="Bridal Wear" data-price="5500" data-name="Ivory Bridal Gown">
+                    <div class="card-img"><img src="images/evory.jpg" alt="Ivory Bridal Gown"></div>
+                    <div class="card-body">
+                        <span class="badge badge-available mb-2">Available</span>
+                        <p style="font-size:12px; color:var(--muted)">Bridal Wear &middot; <a href="shop-profile.html?id=1" style="color:inherit; text-decoration:none;">Colombo Silk House</a></p>
+                        <h3 class="card-title">Ivory Bridal Gown</h3>
+                        <div class="price">Rs. 5,500 / day</div>
+                        <a href="product-details.html?id=7" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+                <div class="card product-card" data-product-id="8" data-category="Dresses" data-price="2900" data-name="Rose Party Dress">
+                    <div class="card-img"><img src="images/evening_dress.png" alt="Rose Party Dress"></div>
+                    <div class="card-body">
+                        <span class="badge badge-limited mb-2">Limited</span>
+                        <p style="font-size:12px; color:var(--muted)">Dresses &middot; <a href="shop-profile.html?id=1" style="color:inherit; text-decoration:none;">Colombo Silk House</a></p>
+                        <h3 class="card-title">Rose Party Dress</h3>
+                        <div class="price">Rs. 2,900 / day</div>
+                        <a href="product-details.html?id=8" class="btn btn-outline" style="width:100%">View Details</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p>&copy; 2026 RentAttire. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        function filterProducts() {
+            const search = document.getElementById("searchInput").value.toLowerCase();
+            const category = document.getElementById("categoryFilter").value;
+            const sort = document.getElementById("sortFilter").value;
+            
+            const container = document.getElementById("productsContainer");
+            const cards = Array.from(container.getElementsByClassName("product-card"));
+            
+            cards.forEach(card => {
+                const name = card.getAttribute("data-name").toLowerCase();
+                const cardCat = card.getAttribute("data-category");
+                
+                const matchesSearch = name.includes(search);
+                const matchesCategory = category === "All" || cardCat === category;
+                
+                if(matchesSearch && matchesCategory) {
+                    card.style.display = "flex";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+            
+            // Simple sorting logic
+            const visibleCards = cards.filter(card => card.style.display !== "none");
+            if (sort !== "default") {
+                visibleCards.sort((a, b) => {
+                    const priceA = parseInt(a.getAttribute("data-price"));
+                    const priceB = parseInt(b.getAttribute("data-price"));
+                    const nameA = a.getAttribute("data-name");
+                    const nameB = b.getAttribute("data-name");
+                    if(sort === "priceLowHigh") return priceA - priceB;
+                    if(sort === "priceHighLow") return priceB - priceA;
+                    if(sort === "nameAZ") return nameA.localeCompare(nameB);
+                    return 0;
+                });
+                
+                visibleCards.forEach(card => container.appendChild(card)); // Re-append in sorted order
+            }
+
+            // Update the "Showing X items" text
+            const resultsCount = document.getElementById("resultsCount");
+            if (resultsCount) {
+                resultsCount.textContent = visibleCards.length === cards.length
+                    ? "Showing all " + cards.length + " items"
+                    : "Showing " + visibleCards.length + " of " + cards.length + " items";
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", filterProducts);
+    </script>
+</body>
+</html>

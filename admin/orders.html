@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent Attire | All Orders</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body style="background:var(--background);">
+    <header>
+        <div class="container navbar">
+            <a href="dashboard.html" class="logo">
+                <img src="../images/logo.svg" alt="Rent Attire logo" width="30" height="30">
+                Rent Attire
+            </a>
+            <nav class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="shops.html">Manage Shops</a>
+                <a href="orders.html" style="color:var(--gold);">All Orders</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="../index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">Visit Site</a>
+                <a href="login.html" style="margin-left: 10px;">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="mb-4">All Platform Orders</h1>
+            <div class="card" style="padding: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: #f9f9f9; border-bottom: 2px solid #eee;">
+                            <th style="padding: 12px;">Order ID</th>
+                            <th style="padding: 12px;">Shop</th>
+                            <th style="padding: 12px;">Customer</th>
+                            <th style="padding: 12px;">Amount</th>
+                            <th style="padding: 12px;">Platform Fee (10%)</th>
+                            <th style="padding: 12px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">RA1001</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Colombo Silk House</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">John Doe</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Rs. 7,500</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee; color:var(--primary); font-weight:bold;">Rs. 750</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span class="badge badge-available">Completed</span></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">RA1002</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Kandy Formal Wear</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Peter Parker</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Rs. 9,000</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee; color:var(--primary); font-weight:bold;">Rs. 900</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span class="badge badge-limited">Ready for Pickup</span></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">RA1003</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Colombo Silk House</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Jane Smith</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;">Rs. 25,000</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee; color:var(--primary); font-weight:bold;">Rs. 2,500</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #eee;"><span class="badge badge-limited">Preparing Attire</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <script src="../js/script.js"></script>
+</body>
+</html>

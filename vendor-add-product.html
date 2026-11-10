@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent Attire | Add Product</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background:var(--background);">
+    <header>
+        <div class="container navbar">
+            <a href="vendor-dashboard.html" class="logo">
+                <img src="images/logo.svg" alt="Rent Attire logo" width="30" height="30">
+                Rent Attire
+            </a>
+            <nav class="nav-links">
+                <a href="vendor-dashboard.html">Dashboard</a>
+                <a href="vendor-products.html" style="color:var(--gold);">My Products</a>
+                <a href="vendor-orders.html">Orders</a>
+                <a href="vendor-profile.html">Profile</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">View Store</a>
+                <a href="index.html" style="margin-left: 10px;">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container" style="max-width:600px;">
+            <h1 class="mb-4">Add New Product</h1>
+            <div class="card p-4">
+                <form onsubmit="return validateAddProductForm(event)">
+                    <div class="form-group mb-3">
+                        <label>Product Name</label>
+                        <input type="text" id="productName" class="form-control" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Category</label>
+                        <select class="form-control" required>
+                            <option value="">Select...</option>
+                            <option value="Sarees">Sarees</option>
+                            <option value="Suits">Suits</option>
+                            <option value="Bridal">Bridal</option>
+                            <option value="Dresses">Dresses</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Rental Price per Day (Rs.)</label>
+                        <input type="number" id="price" class="form-control" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Product Image</label>
+                        <input type="file" class="form-control" accept="image/*">
+                    </div>
+                    <div class="form-group mb-4">
+                        <label>Description</label>
+                        <textarea class="form-control" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%">Add Product</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

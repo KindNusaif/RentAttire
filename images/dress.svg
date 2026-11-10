@@ -1,0 +1,6 @@
+<svg viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="300" height="400" fill="#F7F3EE"/>
+  <path d="M130 60 h40 v40 l60 250 h-160 l60 -250 z" fill="#8C2E4E"/>
+  <circle cx="150" cy="70" r="16" fill="#F7F3EE"/>
+  <text x="150" y="390" font-family="Georgia, serif" font-size="14" fill="#42152A" text-anchor="middle">Dress</text>
+</svg>

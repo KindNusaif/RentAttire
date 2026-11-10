@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rent Attire | Vendor Profile</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="background:var(--background);">
+    <header>
+        <div class="container navbar">
+            <a href="vendor-dashboard.html" class="logo">
+                <img src="images/logo.svg" alt="Rent Attire logo" width="30" height="30">
+                Rent Attire
+            </a>
+            <nav class="nav-links">
+                <a href="vendor-dashboard.html">Dashboard</a>
+                <a href="vendor-products.html">My Products</a>
+                <a href="vendor-orders.html">Orders</a>
+                <a href="vendor-profile.html" style="color:var(--gold);">Profile</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="index.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.85rem; box-shadow: none;">View Store</a>
+                <a href="index.html" style="margin-left: 10px;">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container" style="max-width:600px;">
+            <h1 class="mb-4">Shop Profile</h1>
+            <div class="card p-4">
+                <form>
+                    <div class="text-center mb-4">
+                        <img src="images/logo.svg" width="80" alt="Shop Logo" style="border-radius:50%; background:#f9f9f9; padding:10px; margin-bottom:10px;">
+                        <div>
+                            <button type="button" class="btn btn-outline" style="padding: 4px 10px; font-size:12px;">Change Logo</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label>Shop Name</label>
+                        <input type="text" class="form-control" value="Colombo Silk House">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Owner Name</label>
+                        <input type="text" class="form-control" value="Jane Doe">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Contact Number</label>
+                        <input type="text" class="form-control" value="077 123 4567">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>City / Location</label>
+                        <input type="text" class="form-control" value="Colombo">
+                    </div>
+                    <div class="form-group mb-4">
+                        <label>About Shop (Description)</label>
+                        <textarea class="form-control" rows="4">Premium traditional attire and bridal wear located in the heart of Colombo.</textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary" style="width:100%" onclick="alert('Profile Updated! (Demo)')">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

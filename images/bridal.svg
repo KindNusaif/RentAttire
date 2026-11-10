@@ -1,0 +1,7 @@
+<svg viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="300" height="400" fill="#FFF9F0"/>
+  <path d="M150 50 a30 30 0 1 0 0.1 0 z" fill="#F1DCD0"/>
+  <path d="M110 90 Q150 70 190 90 L220 360 H80 Z" fill="#FFFFFF" stroke="#C9A227" stroke-width="4"/>
+  <path d="M120 150 h60" stroke="#C9A227" stroke-width="4"/>
+  <text x="150" y="390" font-family="Georgia, serif" font-size="14" fill="#42152A" text-anchor="middle">Bridal Wear</text>
+</svg>

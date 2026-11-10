@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details | Rent Attire</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .size-standard-btn:hover {
+            border-color: var(--gold) !important;
+            background: var(--gold-pale) !important;
+        }
+        .size-option-btn:hover {
+            border-color: var(--gold) !important;
+            background: var(--gold-pale) !important;
+        }
+        .size-option-btn:focus-visible {
+            outline: 3px solid var(--gold);
+            outline-offset: 2px;
+        }
+        .product-thumbnail {
+            height: 80px;
+            flex: 1;
+            min-width: 0;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .product-thumbnail.active {
+            border-color: var(--gold);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container navbar">
+            <a href="index.html" class="logo">
+                <img src="images/logo.svg" alt="Rent Attire logo" width="32" height="32">
+                Rent Attire
+            </a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
+            </button>
+            <nav class="nav-links" id="navLinks">
+                <a href="index.html">Home</a>
+                <a href="products.html">Collection</a>
+                <a href="shops.html">Shops</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="vendor-register.html" class="btn btn-gold btn-sm">List Your Shop</a>
+                <a href="products.html" title="Search">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </a>
+                <a href="cart.html" title="Cart">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    <span id="cartCount" class="badge badge-available" style="position:relative;top:-10px;right:10px;font-size:9px;padding:3px 7px;min-width:18px;text-align:center;">0</span>
+                </a>
+                <a href="login.html" title="Login">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container">
+            <div id="productDetailLayout" class="grid-2">
+                <!-- Left Side: Images -->
+                <div>
+                    <div style="border-radius:8px; overflow:hidden; margin-bottom:16px; box-shadow:var(--shadow); background:linear-gradient(160deg, var(--cream), #F1DCD0);">
+                        <img id="mainImage" src="images/saree_royal_red.png" alt="Product image" style="width:100%; aspect-ratio:3/4; object-fit:cover;">
+                    </div>
+                    <div id="productGallery" style="display:flex; gap:10px;">
+                        <!-- Product thumbnails are rendered from the selected item's photos. -->
+                    </div>
+                </div>
+
+                <!-- Right Side: Details -->
+                <div>
+                    <p style="color:var(--muted); font-size:14px; margin-bottom:5px;"><span id="productCategory">Collection</span> &middot; <a id="productShop" href="shop-profile.html" style="color:inherit; text-decoration:none;">Shop</a></p>
+                    <h1 id="productName" style="font-size:32px; margin-bottom:10px;">Product</h1>
+                    <span id="productAvailability" class="badge badge-available mb-3">Available</span>
+                    <div id="productPrice" class="price" style="font-size:24px;">Rs. 0 / day</div>
+                    
+                    <p id="productDescription" class="mb-4 text-muted">Product details are loading.</p>
+                    
+                    <!-- Size Selection with International Standards -->
+                    <div style="margin-bottom: 32px;">
+                        <h3 style="font-size: 1.3rem; margin-bottom: 16px; color: var(--primary-dark);">Select Size</h3>
+                        
+                        <!-- Size Standard Selector -->
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight: 600; margin-bottom: 8px; display: block; color: var(--muted); font-size: 0.9rem;">Size Standard</label>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" class="size-standard-btn active" data-standard="US" onclick="selectSizeStandard('US')" style="padding: 8px 16px; border: 2px solid var(--gold); background: var(--gold); color: var(--primary-dark); border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: var(--transition);">US</button>
+                                <button type="button" class="size-standard-btn" data-standard="UK" onclick="selectSizeStandard('UK')" style="padding: 8px 16px; border: 2px solid var(--border); background: var(--white); color: var(--text); border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: var(--transition);">UK</button>
+                                <button type="button" class="size-standard-btn" data-standard="EU" onclick="selectSizeStandard('EU')" style="padding: 8px 16px; border: 2px solid var(--border); background: var(--white); color: var(--text); border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: var(--transition);">EU</button>
+                                <button type="button" class="size-standard-btn" data-standard="IN" onclick="selectSizeStandard('IN')" style="padding: 8px 16px; border: 2px solid var(--border); background: var(--white); color: var(--text); border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: var(--transition);">IN</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Size Options Grid -->
+                        <div id="sizeOptions" class="size-options-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
+                            <!-- Sizes will be populated by JavaScript based on selected standard -->
+                        </div>
+                        
+                        <!-- Size Conversion Guide -->
+                        <div id="sizeConversionGuide" style="margin-top: 20px; padding: 16px; background: var(--cream); border-radius: var(--radius-sm); border-left: 3px solid var(--gold);">
+                            <h4 style="font-size: 0.95rem; margin-bottom: 12px; color: var(--primary);">International Size Conversion</h4>
+                            <div id="conversionTable" style="font-size: 0.85rem; color: var(--muted);">
+                                <!-- Conversion table will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-2 mb-4">
+                        <div class="form-group">
+                            <label>Pickup Date</label>
+                            <input type="date" id="pickupDate" class="form-control" onchange="calculateRentalPrice()">
+                        </div>
+                        <div class="form-group">
+                            <label>Return Date</label>
+                            <input type="date" id="returnDate" class="form-control" onchange="calculateRentalPrice()">
+                        </div>
+                    </div>
+
+                    <div style="background:var(--cream); padding:20px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:bold;">Total Rental Price:</span>
+                        <span id="totalPriceDisplay" style="font-size:24px; font-weight:bold; color:var(--primary);">Rs. 0</span>
+                    </div>
+
+                    <div style="display:flex; gap:20px;">
+                        <input type="number" id="qty" class="form-control" value="1" min="1" style="width:80px;">
+                        <button class="btn btn-primary" style="flex:1;" onclick="handleAddToCart()">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+            <div id="productNotFound" class="text-center" style="display:none; padding:80px 20px;">
+                <h1 class="section-title">Item Not Found</h1>
+                <p class="section-subtitle" style="margin:0 auto 28px;">The item link is missing or no longer available.</p>
+                <a href="products.html" class="btn btn-primary">Browse Collection</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background: var(--primary-dark); padding: 48px 0; margin-top: 96px;">
+        <div class="container text-center">
+            <p style="color: var(--white); font-size: 1.1rem;">&copy; 2026 Rent Attire. All Rights Reserved.</p>
+            <p style="color: var(--gold); font-size: 0.9rem; margin-top: 8px;">Elevating Fashion Through Sustainable Luxury</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        // International Size Standards Data
+        const sizeStandards = {
+            US: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'],
+            UK: ['4', '6', '8', '10', '12', '14', '16'],
+            EU: ['32', '34', '36', '38', '40', '42', '44'],
+            IN: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL']
+        };
+
+        const sizeConversions = {
+            'XS': { US: 'XS', UK: '4', EU: '32', IN: 'XS' },
+            'S': { US: 'S', UK: '6', EU: '34', IN: 'S' },
+            'M': { US: 'M', UK: '8', EU: '36', IN: 'M' },
+            'L': { US: 'L', UK: '10', EU: '38', IN: 'L' },
+            'XL': { US: 'XL', UK: '12', EU: '40', IN: 'XL' },
+            '2XL': { US: '2XL', UK: '14', EU: '42', IN: '2XL' },
+            '3XL': { US: '3XL', UK: '16', EU: '44', IN: '3XL' }
+        };
+
+        let currentStandard = 'US';
+        let selectedSize = null;
+        let productSizes = null;
+
+        function populateProductSizes(sizes) {
+            productSizes = sizes;
+            updateSizeOptions();
+        }
+
+        function selectSizeStandard(standard) {
+            currentStandard = standard;
+            selectedSize = null;
+            
+            // Update button styles
+            document.querySelectorAll('.size-standard-btn').forEach(btn => {
+                if (btn.dataset.standard === standard) {
+                    btn.style.background = 'var(--gold)';
+                    btn.style.borderColor = 'var(--gold)';
+                    btn.style.color = 'var(--primary-dark)';
+                } else {
+                    btn.style.background = 'var(--white)';
+                    btn.style.borderColor = 'var(--border)';
+                    btn.style.color = 'var(--text)';
+                }
+            });
+            
+            // Update size options
+            updateSizeOptions();
+            updateConversionGuide();
+        }
+
+        function updateSizeOptions() {
+            const container = document.getElementById('sizeOptions');
+            const sizes = productSizes || sizeStandards[currentStandard];
+            
+            container.innerHTML = sizes.map((size, index) => `
+                <button 
+                    type="button" 
+                    class="size-option-btn" 
+                    data-size="${size}"
+                    data-index="${index}"
+                    onclick="selectSize('${size}')"
+                    style="
+                        padding: 12px 8px;
+                        border: 2px solid var(--border);
+                        background: var(--white);
+                        color: var(--text);
+                        border-radius: var(--radius-sm);
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 0.95rem;
+                        transition: var(--transition);
+                        text-align: center;
+                    "
+                >
+                    ${size}
+                </button>
+            `).join('');
+        }
+
+        function selectSize(size) {
+            selectedSize = size;
+            
+            // Update button styles
+            document.querySelectorAll('.size-option-btn').forEach(btn => {
+                if (btn.dataset.size === size) {
+                    btn.style.background = 'var(--primary)';
+                    btn.style.borderColor = 'var(--primary)';
+                    btn.style.color = 'var(--white)';
+                } else {
+                    btn.style.background = 'var(--white)';
+                    btn.style.borderColor = 'var(--border)';
+                    btn.style.color = 'var(--text)';
+                }
+            });
+        }
+
+        function updateConversionGuide() {
+            const container = document.getElementById('conversionTable');
+            const baseSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
+            
+            let html = '<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center;">';
+            html += '<div style="font-weight: 700; color: var(--primary-dark);">US</div>';
+            html += '<div style="font-weight: 700; color: var(--primary-dark);">UK</div>';
+            html += '<div style="font-weight: 700; color: var(--primary-dark);">EU</div>';
+            html += '<div style="font-weight: 700; color: var(--primary-dark);">IN</div>';
+            
+            baseSizes.forEach(size => {
+                const conversion = sizeConversions[size];
+                html += `<div style="padding: 4px 0;">${conversion.US}</div>`;
+                html += `<div style="padding: 4px 0;">${conversion.UK}</div>`;
+                html += `<div style="padding: 4px 0;">${conversion.EU}</div>`;
+                html += `<div style="padding: 4px 0;">${conversion.IN}</div>`;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function handleAddToCart() {
+            if (!window.currentProduct) {
+                alert("This item could not be found.");
+                return;
+            }
+
+            const pickupDate = document.getElementById("pickupDate").value;
+            const returnDate = document.getElementById("returnDate").value;
+            const qty = parseInt(document.getElementById("qty").value);
+            
+            if(!pickupDate || !returnDate) {
+                alert("Please select both pickup and return dates.");
+                return;
+            }
+            
+            if(!selectedSize) {
+                alert("Please select a size.");
+                return;
+            }
+            
+            const calc = calculateRentalPrice();
+            if(!calc || calc.days < 1) return; // Validation failed
+            
+            const product = window.currentProduct;
+            product.size = selectedSize;
+            product.sizeStandard = currentStandard;
+            addToCart(product, qty, calc.days, pickupDate, returnDate);
+        }
+
+        // Initialize size options on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSizeOptions();
+            updateConversionGuide();
+        });
+    </script>
+</body>
+</html>

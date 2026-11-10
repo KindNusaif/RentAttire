@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rental History | Rent Attire</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background-color: var(--cream);
+            color: var(--primary-dark);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container navbar">
+            <a href="index.html" class="logo">Rent Attire</a>
+            <button class="hamburger" id="hamburger">☰</button>
+            <nav class="nav-links" id="navLinks">
+                <a href="index.html">Home</a>
+                <a href="products.html">Collection</a>
+                <a href="shops.html">Shops</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="vendor-register.html" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; box-shadow: none;">List Your Shop</a>
+                <a href="cart.html">Cart <span id="cartCount" class="badge badge-available">0</span></a>
+                <a href="login.html">Login</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="section-title text-center">Rental History</h1>
+            
+            <div class="grid-3">
+                <div class="card" style="grid-column: span 1;">
+                    <div class="card-body" style="text-align:left;">
+                        <h3 class="mb-3">Dashboard</h3>
+                        <ul class="footer-links" style="color:var(--text);">
+                            <li><a href="account.html" style="color:var(--text);">Profile Information</a></li>
+                            <li><a href="history.html" style="color:var(--primary); font-weight:bold;">Rental History</a></li>
+                            <li><a href="tracking.html" style="color:var(--text);">Order Tracking</a></li>
+                            <li><a href="cart.html" style="color:var(--text);">My Cart</a></li>
+                            <li><a href="login.html" style="color:var(--error);">Sign Out</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card" style="grid-column: span 2;">
+                    <div class="card-body" style="text-align:left; overflow-x:auto;">
+                        <h3 class="mb-4">Your Orders</h3>
+                        
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Product</th>
+                                    <th>Rental Dates</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>RA1001</td>
+                                    <td>Royal Red Saree</td>
+                                    <td>20 Aug - 22 Aug</td>
+                                    <td>Rs. 7,500</td>
+                                    <td><span class="badge badge-available">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>RA1002</td>
+                                    <td>Black Suit</td>
+                                    <td>25 Aug - 27 Aug</td>
+                                    <td>Rs. 9,000</td>
+                                    <td><span class="badge badge-limited">Active</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p>&copy; 2026 RentAttire. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

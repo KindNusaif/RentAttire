@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart | Rent Attire</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container navbar">
+            <a href="index.html" class="logo">Rent Attire</a>
+            <button class="hamburger" id="hamburger">☰</button>
+            <nav class="nav-links" id="navLinks">
+                <a href="index.html">Home</a>
+                <a href="products.html">Collection</a>
+                <a href="shops.html">Shops</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="vendor-register.html" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; box-shadow: none;">List Your Shop</a>
+                <a href="cart.html">Cart <span id="cartCount" class="badge badge-available">0</span></a>
+                <a href="login.html">Login</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="section-title">Your Rental Cart</h1>
+            
+            <div id="cartContent">
+                <!-- Cart items will be rendered here by JS -->
+            </div>
+            
+            <div id="cartSummary" style="display:none; max-width:400px; margin-left:auto; background:var(--white); padding:30px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+                <h3 class="mb-4">Order Summary</h3>
+                <div class="d-flex justify-between mb-2">
+                    <span>Subtotal</span>
+                    <span id="cartSubtotal">Rs. 0</span>
+                </div>
+                <div class="d-flex justify-between mb-4">
+                    <span>Deposit (Refundable)</span>
+                    <span>Rs. 1,000</span>
+                </div>
+                <hr class="mb-4" style="border:0; border-top:1px solid #eee;">
+                <div class="d-flex justify-between mb-4" style="font-weight:bold; font-size:20px;">
+                    <span>Total</span>
+                    <span id="cartTotal">Rs. 0</span>
+                </div>
+                <button class="btn btn-primary" style="width:100%" onclick="window.location.href='login.html'">Proceed to Booking</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p>&copy; 2026 RentAttire. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            renderCart();
+        });
+
+        function renderCart() {
+            const cartContent = document.getElementById("cartContent");
+            const cartSummary = document.getElementById("cartSummary");
+            
+            if(cart.length === 0) {
+                cartContent.innerHTML = `
+                    <div class="text-center" style="padding:60px 0;">
+                        <h3 class="mb-3">Your cart is empty.</h3>
+                        <p class="mb-4">Discover an outfit for your next special occasion.</p>
+                        <a href="products.html" class="btn btn-primary">Browse Collection</a>
+                    </div>
+                `;
+                cartSummary.style.display = "none";
+                return;
+            }
+
+            let html = '<div style="margin-bottom:40px;">';
+            let subtotal = 0;
+
+            cart.forEach((item, index) => {
+                html += `
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:20px; background:var(--white); margin-bottom:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+                        <div style="display:flex; gap:20px; align-items:center;">
+                            <img src="images/saree_royal_red.png" alt="${item.name}" style="width:80px; height:80px; object-fit:cover; border-radius:6px; box-shadow:var(--shadow);">
+                            <div>
+                                <h4 style="margin-bottom:5px;">${item.name}</h4>
+                                <p style="font-size:14px; color:var(--muted);">${item.pickupDate} to ${item.returnDate} (${item.days} days)</p>
+                                <p style="font-size:14px;">Rs. ${item.price} / day | Qty: ${item.quantity}</p>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:18px; font-weight:bold; color:var(--primary); margin-bottom:10px;">Rs. ${(item.subtotal).toLocaleString()}</div>
+                            <button onclick="removeFromCart(${index})" style="background:none; border:none; color:var(--error); cursor:pointer; text-decoration:underline;">Remove</button>
+                        </div>
+                    </div>
+                `;
+                subtotal += item.subtotal;
+            });
+            
+            html += '</div>';
+            cartContent.innerHTML = html;
+            
+            document.getElementById("cartSubtotal").textContent = "Rs. " + subtotal.toLocaleString();
+            document.getElementById("cartTotal").textContent = "Rs. " + (subtotal + 1000).toLocaleString();
+            cartSummary.style.display = "block";
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            localStorage.setItem("cart", JSON.stringify(cart));
+            updateCartCount();
+            renderCart();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Rent Attire</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container navbar">
+            <a href="index.html" class="logo">Rent Attire</a>
+            <button class="hamburger" id="hamburger">☰</button>
+            <nav class="nav-links" id="navLinks">
+                <a href="index.html">Home</a>
+                <a href="products.html">Collection</a>
+                <a href="shops.html">Shops</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <div class="nav-icons">
+                <a href="vendor-register.html" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; box-shadow: none;">List Your Shop</a>
+                <a href="cart.html">Cart <span id="cartCount" class="badge badge-available">0</span></a>
+                <a href="login.html">Login</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container text-center">
+            <div class="text-center mb-4">
+                <img src="images/logo-full.svg" alt="Rent Attire" style="height: 48px; margin: 0 auto 16px;">
+            </div>
+            <div style="max-width:400px; margin:0 auto; background:var(--white); padding:40px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.05); text-align:left;">
+                <h2 class="mb-4 text-center">Sign In</h2>
+                
+                <form id="loginForm" onsubmit="return validateLoginForm(event)">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" class="form-control" placeholder="Enter your email">
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" class="form-control" placeholder="Enter your password">
+                    </div>
+                    
+                    <div class="d-flex justify-between align-center mb-4" style="font-size:14px;">
+                        <label style="display:flex; align-items:center; gap:5px; font-weight:normal;">
+                            <input type="checkbox" id="remember"> Remember Me
+                        </label>
+                        <a href="#" style="color:var(--primary);">Forgot Password?</a>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
+                </form>
+                
+                <div class="text-center mt-4" style="margin-top:20px; font-size:14px;">
+                    Don't have an account? <a href="register.html" style="color:var(--primary); font-weight:bold;">Create Account</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p>&copy; 2026 RentAttire. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
