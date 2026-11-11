@@ -24,7 +24,7 @@ The database name in the migration and API configuration is `rentattire_db`. Cha
 | Action | Methods | Purpose |
 |---|---|---|
 | `health` | GET | API health check |
-| `register`, `vendor-register` | POST | Customer or pending vendor/shop registration |
+| `register`, `vendor-register` | POST | Customer registration or active vendor/shop registration |
 | `login`, `logout`, `me`, `csrf` | POST/GET | Session authentication and CSRF token |
 | `products` | GET/POST/PUT/DELETE | Public listings and vendor/admin product management |
 | `categories`, `size-types`, `size-options`, `product-variants` | GET | Categories and garment sizing/inventory |
@@ -45,7 +45,7 @@ Pass the action as an `action` query parameter. JSON request bodies are supporte
 
 ## Vendor workflow and availability
 
-- Vendor registration creates a pending vendor account and pending shop. Admins can approve/reject vendors and separately approve, reject, deactivate, or reactivate shops using `admin/shops.html`.
+- Vendor registration creates an active vendor account and approved shop immediately. Admins can suspend vendors and deactivate or reactivate shops using `admin/shops.html`.
 - Vendors can edit their own shops and products, add multiple images, set rental prices/deposits, select clothing size systems, and manage per-size quantity and measurements.
 - Public products are limited to active products on approved shops owned by active vendors.
 - Availability is date-range based. Checkout rechecks stock for the selected size/variant against overlapping non-cancelled rentals. Product stock is not permanently decremented on checkout.

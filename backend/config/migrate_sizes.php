@@ -116,7 +116,7 @@ try {
     // 6. Seed size types
     $types = [
         ['saree_osari', 'Sarees & Kandyan Osari', 'Traditional Sri Lankan Wear', 'Free Size drape (5.5m - 6.3m) with selectable blouse options.'],
-        ['mens_suit', 'Men\'s Suits & Blazers', 'Men', 'Chest measurement in inches (36" - 48"), jacket length and trouser waist sizing.'],
+        ['mens_suit', 'Men\'s Suits & Blazers', 'Men', 'Trouser waist (30" - 44") and inseam length (Short, Regular, Long).'],
         ['womens_dress', 'Women\'s Dresses & Bridal Gowns', 'Women', 'Primary UK sizing (UK 6 - 20) with US and EU conversions and measurements.'],
         ['traditional_sri_lankan', 'Traditional Sri Lankan Attire', 'Traditional Sri Lankan Wear', 'National Dress, Sarongs, Lama Sarees, and ceremonial attire.'],
         ['kids_clothing', 'Kids & Children\'s Clothing', 'Kids', 'Age-based sizes (2–15 years) accompanied by height in cm and chest measurements.']
@@ -133,4 +133,3 @@ try {
     fwrite(STDERR, "MIGRATION FAILED: " . $e->getMessage() . PHP_EOL);
     exit(1);
 }
-

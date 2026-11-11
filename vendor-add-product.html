@@ -262,7 +262,7 @@
                 document.querySelectorAll("input[name='sareeBustCheck']").forEach(input => input.checked = (measurements.ready_made_busts || []).includes(input.value));
             } else {
                 const config = {
-                    mens_suit: [".suit-enable", ".suit-stock", "data-chest", /Chest\s+(\d+)/i],
+                    mens_suit: [".suit-enable", ".suit-stock", "data-waist", /Trouser Waist\s+(\d+)/i],
                     womens_dress: [".dress-enable", ".dress-stock", "data-uk", /UK\s+(\d+)/i],
                     kids_clothing: [".kids-enable", ".kids-stock", "data-age", /^Kids\s+(.+)$/i],
                     traditional_sri_lankan: [".trad-enable", ".trad-stock", "data-label", null]
@@ -272,8 +272,17 @@
                 document.querySelectorAll(checkboxSelector).forEach(input => input.checked = false);
                 document.querySelectorAll(stockSelector).forEach(input => input.value = 0);
                 variants.forEach(variant => {
-                    const match = pattern && variant.variant_label.match(pattern);
-                    const value = match ? match[1] : variant.variant_label;
+                    let value;
+                    if (code === "mens_suit") {
+                        const measurements = measurementsFor(variant);
+                        const variantLabel = variant.variant_label || "";
+                        const waistMatch = variantLabel.match(/Trouser Waist\s+(\d+)/i);
+                        value = String(measurements.trouser_waist || (variant.waist_inches != null && variant.waist_inches !== "" && Number.isFinite(Number(variant.waist_inches)) ? Number(variant.waist_inches) : "") || (waistMatch && waistMatch[1]) || "");
+                    } else {
+                        const match = pattern && variant.variant_label.match(pattern);
+                        value = match ? match[1] : variant.variant_label;
+                    }
+                    if (!value) return;
                     const checkbox = [...document.querySelectorAll(checkboxSelector)].find(input => input.dataset[key] === value);
                     if (!checkbox) return;
                     checkbox.checked = true;
@@ -345,44 +354,23 @@
                     </div>
                 `;
             } else if (code === "mens_suit") {
-                const chestSizes = [
-                    { chest: '36', eu: '46' },
-                    { chest: '38', eu: '48' },
-                    { chest: '40', eu: '50' },
-                    { chest: '42', eu: '52' },
-                    { chest: '44', eu: '54' },
-                    { chest: '46', eu: '56' },
-                    { chest: '48', eu: '58' }
-                ];
+                const trouserWaists = ['30', '32', '34', '36', '38', '40', '42', '44'];
                 container.innerHTML = `
-                    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Select which chest sizes you have in stock and enter the number of units available:</p>
-                    <table class="size-grid-table mb-3">
+                    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">Select which trouser waist sizes you have in stock and enter the number of units available:</p>
+                    <table class="size-grid-table">
                         <thead>
-                            <tr><th>Enable</th><th>Chest (UK/US)</th><th>EU Size</th><th>Units in Stock</th></tr>
+                            <tr><th>Enable</th><th>Trouser Waist (Inches)</th><th>Units in Stock</th></tr>
                         </thead>
                         <tbody>
-                            ${chestSizes.map(item => `
+                            ${trouserWaists.map(waist => `
                                 <tr>
-                                    <td><input type="checkbox" class="suit-enable" data-chest="${item.chest}" data-eu="${item.eu}" checked></td>
-                                    <td><strong>${item.chest}" Chest</strong></td>
-                                    <td>EU ${item.eu}</td>
-                                    <td><input type="number" class="form-control stock-input suit-stock" data-chest="${item.chest}" value="1" min="0"></td>
+                                    <td><input type="checkbox" class="suit-enable" data-waist="${waist}" ${['30','32','34','36','38','40'].includes(waist) ? 'checked' : ''}></td>
+                                    <td><strong>${waist}"</strong></td>
+                                    <td><input type="number" class="form-control stock-input suit-stock" data-waist="${waist}" value="${['30','32','34','36','38','40'].includes(waist) ? '1' : '0'}" min="0"></td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
-                    <div class="grid-2">
-                        <div>
-                            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Jacket Lengths Supported:</label>
-                            <small class="text-muted" style="display:block; margin-bottom:4px;">Short (&lt;5'8"), Regular (5'8"-6'0"), Long (&gt;6'0")</small>
-                            <input type="text" id="cfgSuitJacketLengths" class="form-control" value="Short, Regular, Long">
-                        </div>
-                        <div>
-                            <label style="font-size:0.85rem; font-weight:600; display:block; margin-bottom:4px;">Available Trouser Waist Sizes:</label>
-                            <small class="text-muted" style="display:block; margin-bottom:4px;">Comma-separated inches</small>
-                            <input type="text" id="cfgSuitTrouserWaists" class="form-control" value="30, 32, 34, 36, 38, 40">
-                        </div>
-                    </div>
                 `;
             } else if (code === "womens_dress") {
                 const dressSizes = [
@@ -476,7 +464,7 @@
             const description = document.getElementById("description").value.trim();
             const customNotes = document.getElementById("customMeasurementNotes").value.trim();
 
-            if (!name || !categoryId || !price) {
+            if (!name || !categoryId || !sizeTypeId || !Number.isFinite(price) || price <= 0 || !Number.isFinite(deposit) || deposit < 0) {
                 showAlert("Please complete all required fields.", true);
                 return;
             }
@@ -488,7 +476,7 @@
             let totalStock = 0;
 
             if (code === "saree_osari") {
-                totalStock = parseInt(document.getElementById("cfgSareeStock")?.value, 10) || 1;
+                totalStock = parseInt(document.getElementById("cfgSareeStock")?.value, 10) || 0;
                 const sareeLen = document.getElementById("cfgSareeLength")?.value.trim() || "5.8m";
                 const busts = Array.from(document.querySelectorAll("input[name='sareeBustCheck']:checked")).map(el => el.value);
                 const blouseOpts = [];
@@ -507,20 +495,16 @@
                 });
             } else if (code === "mens_suit") {
                 document.querySelectorAll(".suit-enable:checked").forEach(cb => {
-                    const chest = cb.dataset.chest;
-                    const eu = cb.dataset.eu;
-                    const stockInput = document.querySelector(`.suit-stock[data-chest='${chest}']`);
+                    const waist = cb.dataset.waist;
+                    const stockInput = document.querySelector(`.suit-stock[data-waist='${waist}']`);
                     const stockVal = parseInt(stockInput?.value, 10) || 0;
                     if (stockVal > 0) {
                         totalStock += stockVal;
                         variants.push({
-                            variant_label: `Chest ${chest}" (EU ${eu}) / Regular`,
+                            variant_label: `Trouser Waist ${waist}"`,
                             stock: stockVal,
                             custom_measurements: {
-                                chest: chest,
-                                eu: eu,
-                                jacket_lengths: ["Short", "Regular", "Long"],
-                                trouser_waists: ["30", "32", "34", "36", "38", "40"]
+                                trouser_waist: waist
                             }
                         });
                     }
@@ -569,7 +553,10 @@
                 });
             }
 
-            if (totalStock <= 0) totalStock = 1;
+            if (!variants.length) {
+                showAlert("Select at least one size with stock greater than zero.", true);
+                return;
+            }
 
             submitBtn.disabled = true;
             submitBtn.textContent = "Publishing...";
@@ -632,35 +619,47 @@
                 showAlert("Save the product first, then reopen it to manage rental date blocks.", true);
                 return false;
             }
-            const result = await api("availability", { body: {
-                product_id: Number(editingProductId),
-                start_date: document.getElementById("unavailableStart").value,
-                end_date: document.getElementById("unavailableEnd").value,
-                reason: document.getElementById("unavailableReason").value.trim()
-            }});
-            showAlert(result.message, !result.success);
-            if (result.success) {
-                document.getElementById("unavailableDatesForm").reset();
-                await loadUnavailableDates(editingProductId);
+            try {
+                const result = await api("availability", { body: {
+                    product_id: Number(editingProductId),
+                    start_date: document.getElementById("unavailableStart").value,
+                    end_date: document.getElementById("unavailableEnd").value,
+                    reason: document.getElementById("unavailableReason").value.trim()
+                }});
+                showAlert(result.message, !result.success);
+                if (result.success) {
+                    document.getElementById("unavailableDatesForm").reset();
+                    await loadUnavailableDates(editingProductId);
+                }
+            } catch(error) {
+                showAlert(error.message || "Could not save unavailable dates.", true);
             }
             return false;
         }
 
         async function loadUnavailableDates(productId) {
             const list = document.getElementById("unavailableDatesList");
-            const result = await api("availability", {}, "&product_id=" + encodeURIComponent(productId));
-            if (!result.success) {
-                list.textContent = result.message || "Could not load unavailable dates.";
-                return;
+            try {
+                const result = await api("availability", {}, "&product_id=" + encodeURIComponent(productId));
+                if (!result.success) {
+                    list.textContent = result.message || "Could not load unavailable dates.";
+                    return;
+                }
+                list.innerHTML = result.unavailable_dates.map(item => `<li>${escapeHtml(item.start_date)} – ${escapeHtml(item.end_date)} ${escapeHtml(item.reason || "")}
+                    <button type="button" class="btn btn-outline" onclick="removeUnavailableDates(${Number(item.availability_id)})">Remove</button></li>`).join("") || "<li>No date blocks.</li>";
+            } catch(error) {
+                list.textContent = error.message || "Could not load unavailable dates.";
             }
-            list.innerHTML = result.unavailable_dates.map(item => `<li>${escapeHtml(item.start_date)} – ${escapeHtml(item.end_date)} ${escapeHtml(item.reason || "")}
-                <button type="button" class="btn btn-outline" onclick="removeUnavailableDates(${Number(item.availability_id)})">Remove</button></li>`).join("") || "<li>No date blocks.</li>";
         }
 
         async function removeUnavailableDates(id) {
-            const result = await api("availability", { method: "DELETE" }, "&id=" + encodeURIComponent(id));
-            showAlert(result.message, !result.success);
-            if (result.success) await loadUnavailableDates(editingProductId);
+            try {
+                const result = await api("availability", { method: "DELETE" }, "&id=" + encodeURIComponent(id));
+                showAlert(result.message, !result.success);
+                if (result.success) await loadUnavailableDates(editingProductId);
+            } catch(error) {
+                showAlert(error.message || "Could not remove unavailable dates.", true);
+            }
         }
 
         function showAlert(msg, isError) {

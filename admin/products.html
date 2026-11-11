@@ -155,16 +155,18 @@
                     method: "PUT",
                     body: {
                         product_name: prod.product_name,
+                        category_id: prod.category_id,
+                        size_type_id: prod.size_type_id,
                         description: prod.description,
                         price_per_day: prod.price_per_day,
                         deposit_amount: prod.deposit_amount,
                         stock: prod.stock,
+                        custom_measurement_notes: prod.custom_measurement_notes,
                         status: newStatus
                     }
                 }, "&id=" + id);
                 if (res.success) {
-                    prod.status = newStatus;
-                    renderTable(allProducts);
+                    await loadAdminProducts();
                 } else {
                     alert(res.message);
                 }
@@ -190,4 +192,3 @@
     </script>
 </body>
 </html>
-

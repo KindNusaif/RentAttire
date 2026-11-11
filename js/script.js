@@ -712,13 +712,13 @@ function validateVendorRegisterForm(event) {
         owner_name: document.getElementById("ownerName").value.trim(),
         email: document.getElementById("email").value.trim(),
         phone: document.getElementById("phone")?.value.trim() || "",
-        shop_email: document.getElementById("shopEmail")?.value.trim() || "",
+        shop_email: document.getElementById("shopEmail")?.value.trim() || document.getElementById("email").value.trim(),
         address: document.getElementById("address")?.value.trim() || "",
         description: document.getElementById("description")?.value.trim() || "",
         password: document.getElementById("password").value
     };
     api("vendor-register", { body }).then(result => {
-        setPageMessage(form, result.message || "Vendor application submitted.", !result.success);
+        setPageMessage(form, result.message || "Shop registered successfully. Sign in to continue.", !result.success);
         if (result.success) form.reset();
     }).catch(() => setPageMessage(form, "Could not reach the server. Check that WAMP is running.", true));
     return false;

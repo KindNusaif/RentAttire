@@ -1,7 +1,5 @@
--- ============================================================================
--- RentAttire: Sri Lankan Category-Based Dynamic Clothing Size System Migration
--- Database: rentattire_db
--- ============================================================================
+
+-- Database: rentattire
 
 USE rentattire_db;
 
@@ -101,7 +99,7 @@ ALTER TABLE order_items MODIFY COLUMN size VARCHAR(255) NULL;
 -- 9. Seed standard size types
 INSERT INTO size_types (type_code, type_name, category_group, description) VALUES
 ('saree_osari', 'Sarees & Kandyan Osari', 'Traditional Sri Lankan Wear', 'Free Size drape (5.5m - 6.3m) with selectable blouse options (Ready-made bust sizes, unstitched blouse piece, or saree only).'),
-('mens_suit', 'Men\'s Suits & Blazers', 'Men', 'Chest measurement in inches (36" - 48"), jacket length (Short, Regular, Long) and trouser waist/length sizing.'),
+('mens_suit', 'Men\'s Suits & Blazers', 'Men', 'Trouser waist (30" - 44") and inseam length (Short, Regular, Long).'),
 ('womens_dress', 'Women\'s Dresses & Bridal Gowns', 'Women', 'Primary UK sizing (UK 6 - 20) with US and EU conversions, plus bust, waist, and hip garment measurements.'),
 ('traditional_sri_lankan', 'Traditional Sri Lankan Attire', 'Traditional Sri Lankan Wear', 'National Dress (Arya Sinhala), Sarongs, Lama Sarees, and cultural ceremonial garments.'),
 ('kids_clothing', 'Kids & Children\'s Clothing', 'Kids', 'Age-based sizes (2–15 years) accompanied by height in cm, chest, and waist measurements.')

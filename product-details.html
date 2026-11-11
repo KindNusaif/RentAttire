@@ -225,9 +225,6 @@
         let selectedVariantId = null;
 
         // Suit state
-        let suitChest = null;
-        let suitEu = null;
-        let suitFit = "Regular";
         let suitWaist = null;
         let suitTLength = "Regular (32\")";
 
@@ -400,24 +397,23 @@
            2. MEN'S SUITS
            ---------------------------------------------------- */
         function renderSuitSizing(product, container) {
-            const chestOptions = [
-                { chest: "36", eu: "46" },
-                { chest: "38", eu: "48" },
-                { chest: "40", eu: "50" },
-                { chest: "42", eu: "52" },
-                { chest: "44", eu: "54" },
-                { chest: "46", eu: "56" },
-                { chest: "48", eu: "58" }
-            ];
-
             const stockMap = {};
             const variantMap = {};
             if (product.variants && product.variants.length > 0) {
                 product.variants.forEach(v => {
-                    const m = (v.display_label || v.variant_label || "").match(/(\d{2})/);
-                    if (m) {
-                        stockMap[m[1]] = Number(v.stock);
-                        variantMap[m[1]] = v.variant_id;
+                    let measurements = v.custom_measurements || {};
+                    if (typeof measurements === "string") {
+                        try {
+                            measurements = JSON.parse(measurements);
+                        } catch {
+                            measurements = {};
+                        }
+                    }
+                    const waistMatch = (v.display_label || v.variant_label || "").match(/Trouser Waist\s+(\d+)/i);
+                    const waist = measurements.trouser_waist || (v.waist_inches != null && v.waist_inches !== "" && Number.isFinite(Number(v.waist_inches)) ? String(Number(v.waist_inches)) : "") || (waistMatch && waistMatch[1]);
+                    if (waist) {
+                        stockMap[waist] = Number(v.stock);
+                        variantMap[waist] = v.variant_id;
                     }
                 });
             }
@@ -425,17 +421,18 @@
             container.innerHTML = `
                 <div style="margin-bottom:16px;">
                     <div class="size-subheading">
-                        <span>1. Jacket Chest Size: <span style="color:var(--error)">*</span></span>
-                        <small>UK/US (Inches) &middot; EU Size</small>
+                        <span>1. Trouser Waist (Inches): <span style="color:var(--error)">*</span></span>
+                        <small>Waist circumference</small>
                     </div>
-                    <div class="size-options-grid" id="suitChestGrid">
-                        ${chestOptions.map(item => {
-                            const inStock = stockMap[item.chest] === undefined || stockMap[item.chest] > 0;
-                            const vId = variantMap[item.chest] || "";
+                    <div class="size-options-grid" id="suitWaistGrid">
+                        ${['30','32','34','36','38','40','42','44'].map(waist => {
+                            const inStock = product.variants && product.variants.length > 0
+                                ? stockMap[waist] > 0
+                                : true;
+                            const vId = variantMap[waist] || "";
                             return `
-                            <button type="button" class="size-option-btn suit-chest-btn" data-chest="${item.chest}" data-eu="${item.eu}" data-variant-id="${vId}" onclick="selectSuitChest('${item.chest}', '${item.eu}', '${vId}')" ${inStock ? '' : 'disabled title="Out of stock"'}>
-                                <span style="font-weight:bold; font-size:13.5px;">${item.chest}"</span>
-                                <span style="font-size:10.5px; display:block; opacity:0.8;">EU ${item.eu}</span>
+                            <button type="button" class="size-option-btn suit-waist-btn" data-waist="${waist}" data-variant-id="${vId}" onclick="selectSuitWaist('${waist}', '${vId}')" ${inStock ? '' : 'disabled title="Out of stock"'}>
+                                ${waist}"
                             </button>`;
                         }).join('')}
                     </div>
@@ -443,31 +440,7 @@
 
                 <div style="margin-bottom:16px;">
                     <div class="size-subheading">
-                        <span>2. Jacket Length / Fit: <span style="color:var(--error)">*</span></span>
-                        <small>Based on height</small>
-                    </div>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <button type="button" class="size-option-btn suit-fit-btn" data-fit="Short" onclick="selectSuitFit('Short')" style="flex:1;">Short (&lt; 5'8")</button>
-                        <button type="button" class="size-option-btn suit-fit-btn selected" data-fit="Regular" onclick="selectSuitFit('Regular')" style="flex:1;">Regular (5'8"-6'0")</button>
-                        <button type="button" class="size-option-btn suit-fit-btn" data-fit="Long" onclick="selectSuitFit('Long')" style="flex:1;">Long (&gt; 6'0")</button>
-                    </div>
-                </div>
-
-                <div style="margin-bottom:16px;">
-                    <div class="size-subheading">
-                        <span>3. Trouser Waist (Inches): <span style="color:var(--error)">*</span></span>
-                        <small>Waist circumference</small>
-                    </div>
-                    <div class="size-options-grid" id="suitWaistGrid">
-                        ${['30','32','34','36','38','40','42','44'].map(w => `
-                            <button type="button" class="size-option-btn suit-waist-btn" data-waist="${w}" onclick="selectSuitWaist('${w}')">${w}"</button>
-                        `).join('')}
-                    </div>
-                </div>
-
-                <div style="margin-bottom:16px;">
-                    <div class="size-subheading">
-                        <span>4. Trouser Inseam / Length: <span style="color:var(--error)">*</span></span>
+                        <span>2. Trouser Inseam / Length: <span style="color:var(--error)">*</span></span>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
                         <button type="button" class="size-option-btn suit-tlen-btn" data-len="Short (30\')" onclick="selectSuitTLength('Short (30\')')" style="flex:1;">Short (30")</button>
@@ -479,26 +452,9 @@
             updateSuitSelection();
         }
 
-        function selectSuitChest(chest, eu, vId) {
-            suitChest = chest;
-            suitEu = eu;
-            if (vId) selectedVariantId = Number(vId);
-            document.querySelectorAll(".suit-chest-btn").forEach(btn => {
-                btn.classList.toggle("selected", btn.dataset.chest === chest);
-            });
-            updateSuitSelection();
-        }
-
-        function selectSuitFit(fit) {
-            suitFit = fit;
-            document.querySelectorAll(".suit-fit-btn").forEach(btn => {
-                btn.classList.toggle("selected", btn.dataset.fit === fit);
-            });
-            updateSuitSelection();
-        }
-
-        function selectSuitWaist(w) {
+        function selectSuitWaist(w, vId) {
             suitWaist = w;
+            selectedVariantId = vId ? Number(vId) : null;
             document.querySelectorAll(".suit-waist-btn").forEach(btn => {
                 btn.classList.toggle("selected", btn.dataset.waist === w);
             });
@@ -514,8 +470,8 @@
         }
 
         function updateSuitSelection() {
-            if (suitChest && suitWaist) {
-                selectedSizeString = `Chest ${suitChest}" (EU ${suitEu}) / ${suitFit} / Trouser Waist ${suitWaist}", Length ${suitTLength}`;
+            if (suitWaist) {
+                selectedSizeString = `Trouser Waist ${suitWaist}", Length ${suitTLength}`;
                 clearSizeError();
             } else {
                 selectedSizeString = "";
@@ -796,20 +752,14 @@
             } else if (code === "mens_suit" || cat.includes("suit")) {
                 title.textContent = "Size Guide: Men's Suits & Formal Wear";
                 body.innerHTML = `
-                    <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Measurements in inches over a dress shirt. Sri Lanka standard uses UK/US chest sizes.</p>
+                    <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Choose trouser waist and inseam measurements in inches.</p>
                     <div class="size-guide-table-wrap">
                         <table class="size-guide-table" style="width:100%;">
                             <thead>
-                                <tr><th>Chest (UK/US)</th><th>EU Size</th><th>Matching Trouser Waist</th><th>Recommended Height</th></tr>
+                                <tr><th>Trouser Waist</th><th>Short Inseam</th><th>Regular Inseam</th><th>Long Inseam</th></tr>
                             </thead>
                             <tbody>
-                                <tr><td>36"</td><td>EU 46</td><td>30"</td><td>Short: &lt; 5'8"</td></tr>
-                                <tr><td>38"</td><td>EU 48</td><td>32"</td><td>Regular: 5'8"–6'0"</td></tr>
-                                <tr><td>40"</td><td>EU 50</td><td>34"</td><td>Regular: 5'8"–6'0"</td></tr>
-                                <tr><td>42"</td><td>EU 52</td><td>36"</td><td>Regular: 5'8"–6'0"</td></tr>
-                                <tr><td>44"</td><td>EU 54</td><td>38"</td><td>Long: &gt; 6'0"</td></tr>
-                                <tr><td>46"</td><td>EU 56</td><td>40"</td><td>Long: &gt; 6'0"</td></tr>
-                                <tr><td>48"</td><td>EU 58</td><td>42"</td><td>Long: &gt; 6'0"</td></tr>
+                                <tr><td>30"–44"</td><td>30"</td><td>32"</td><td>34"</td></tr>
                             </tbody>
                         </table>
                     </div>

@@ -14,6 +14,73 @@ if (in_array($method, ['POST','PUT','PATCH','DELETE'], true) && !in_array($actio
     }
 }
 
+function cartSizeMatchesVariant(string $size, array $variant): bool
+{
+    $allowedSizes = array_filter([
+        $variant['variant_label'] ?? null,
+        $variant['display_label'] ?? null,
+        isset($variant['us_size']) ? 'US ' . $variant['us_size'] : null,
+        isset($variant['uk_size']) ? 'UK ' . $variant['uk_size'] : null,
+        isset($variant['eu_size']) ? 'EU ' . $variant['eu_size'] : null,
+    ]);
+    if (in_array($size, $allowedSizes, true)) return true;
+
+    $measurements = $variant['custom_measurements'] ?? null;
+    if (is_string($measurements)) {
+        $measurements = json_decode($measurements, true);
+    }
+    if (!is_array($measurements)) $measurements = [];
+
+    $blouseOptions = $measurements['blouse_options'] ?? [];
+    if (is_array($blouseOptions)) {
+        if (in_array('piece_only', $blouseOptions, true) && $size === 'Free Size / Blouse Piece Only (Unstitched)') return true;
+        if (in_array('no_blouse', $blouseOptions, true) && $size === 'Free Size / Without Blouse') return true;
+        if (in_array('ready_made', $blouseOptions, true)) {
+            $busts = $measurements['ready_made_busts'] ?? [];
+            foreach (is_array($busts) ? $busts : [] as $bust) {
+                if ($size === 'Free Size / Ready-made Blouse (Bust ' . $bust . '")') return true;
+            }
+        }
+    }
+
+    $waist = $measurements['trouser_waist'] ?? $variant['waist_inches'] ?? null;
+    if (!is_string($waist) && !is_int($waist) && !is_float($waist)) $waist = null;
+    if ($waist !== null && is_numeric($waist)) {
+        $waistValue = (float)$waist;
+        $waist = floor($waistValue) === $waistValue ? (string)(int)$waistValue : (string)$waistValue;
+    }
+    if ($waist !== null) {
+        foreach (["Short (30')", "Regular (32')", "Long (34')"] as $length) {
+            if ($size === 'Trouser Waist ' . $waist . '", Length ' . $length) return true;
+        }
+    }
+
+    $dressMeasurements = [
+        '6' => [31, 24, 34], '8' => [33, 26, 36], '10' => [35, 28, 38], '12' => [37, 30, 40],
+        '14' => [39, 32, 42], '16' => [41, 34, 44], '18' => [43, 36, 46], '20' => [45, 38, 48],
+    ];
+    $ukSize = is_scalar($measurements['uk'] ?? null) ? (string)$measurements['uk'] : '';
+    if (isset($dressMeasurements[$ukSize])) {
+        [$bust, $dressWaist, $hips] = $dressMeasurements[$ukSize];
+        $usSize = is_scalar($measurements['us'] ?? null) ? (string)$measurements['us'] : '';
+        $euSize = is_scalar($measurements['eu'] ?? null) ? (string)$measurements['eu'] : '';
+        $expected = 'UK ' . $ukSize . ' (US ' . $usSize . ' / EU ' . $euSize . ')'
+            . ' - Bust ' . $bust . '", Waist ' . $dressWaist . '", Hips ' . $hips . '"';
+        if ($size === $expected) return true;
+    }
+
+    $kidsMeasurements = [
+        '2–3 Years' => [98, 21, 20], '4–5 Years' => [110, 23, 22], '6–7 Years' => [122, 25, 23],
+        '8–9 Years' => [134, 27, 24], '10–11 Years' => [146, 29, 26], '12–13 Years' => [158, 31, 27],
+        '14–15 Years' => [164, 33, 28],
+    ];
+    foreach ($kidsMeasurements as $age => [$height, $chest, $kidsWaist]) {
+        if ($size === 'Kids ' . $age . ' (Height ~' . $height . ' cm, Chest ' . $chest . '", Waist ' . $kidsWaist . '")') return true;
+    }
+
+    return false;
+}
+
 try {
     switch ($action) {
         case 'health':
@@ -32,7 +99,7 @@ try {
             $email = strtolower(cleanString($data['email'] ?? '', 190));
             $phone = cleanString($data['phone'] ?? '', 30);
             $password = (string)($data['password'] ?? '');
-            if ($firstName === '' || $lastName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8) {
+            if ($firstName === '' || $lastName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) <=8) {
                 jsonResponse(['success' => false, 'message' => 'Enter your name, a valid email and a password of at least 8 characters.'], 422);
             }
             $stmt = $pdo->prepare("INSERT INTO users (first_name,last_name,email,phone,password_hash,role) VALUES (?,?,?,?,?,'customer')");
@@ -52,7 +119,8 @@ try {
             $ownerName = cleanString($data['owner_name'] ?? '', 150);
             $email = strtolower(cleanString($data['email'] ?? '', 190));
             $phone = cleanString($data['phone'] ?? '', 30);
-            $shopEmail = strtolower(cleanString($data['shop_email'] ?? $email, 190));
+            $shopEmail = strtolower(cleanString($data['shop_email'] ?? '', 190));
+            if ($shopEmail === '') $shopEmail = $email;
             $address = cleanString($data['address'] ?? '', 255);
             $description = cleanString($data['description'] ?? '', 3000);
             $password = (string)($data['password'] ?? '');
@@ -61,11 +129,11 @@ try {
             }
             $pdo->beginTransaction();
             try {
-                $stmt = $pdo->prepare("INSERT INTO users (first_name,last_name,email,phone,password_hash,role,status) VALUES (?,?,?,?,?,'vendor','pending')");
+                $stmt = $pdo->prepare("INSERT INTO users (first_name,last_name,email,phone,password_hash,role,status) VALUES (?,?,?,?,?,'vendor','active')");
                 $parts = preg_split('/\s+/', $ownerName, 2);
                 $stmt->execute([$parts[0] ?? $ownerName, $parts[1] ?? '', $email, $phone, password_hash($password, PASSWORD_DEFAULT)]);
                 $userId = (int)$pdo->lastInsertId();
-                $shop = $pdo->prepare("INSERT INTO shops (vendor_id,shop_name,description,address,phone,email,status) VALUES (?,?,?,?,?,?, 'pending')");
+                $shop = $pdo->prepare("INSERT INTO shops (vendor_id,shop_name,description,address,phone,email,status) VALUES (?,?,?,?,?,?, 'approved')");
                 $shop->execute([$userId, $shopName, $description, $address, $phone, $shopEmail]);
                 $pdo->commit();
             } catch (Throwable $e) {
@@ -73,7 +141,7 @@ try {
                 if ($e instanceof PDOException && $e->getCode() === '23000') jsonResponse(['success' => false, 'message' => 'An account with this email already exists.'], 409);
                 throw $e;
             }
-            jsonResponse(['success' => true, 'message' => 'Vendor application submitted. Awaiting admin approval.'], 201);
+            jsonResponse(['success' => true, 'message' => 'Shop registered successfully. It is active and ready to manage. Sign in to continue.'], 201);
 
         case 'login':
             requireMethod('POST');
@@ -361,15 +429,14 @@ try {
 
                 $variantLabel = null;
                 if ($variantId) {
-                    $vCheck = $pdo->prepare("SELECT pv.variant_id,pv.stock,pv.variant_label,so.display_label,so.uk_size,so.us_size,so.eu_size FROM product_variants pv LEFT JOIN size_options so ON so.size_option_id=pv.size_option_id WHERE pv.variant_id=? AND pv.product_id=? AND pv.status='active'");
+                    $vCheck = $pdo->prepare("SELECT pv.variant_id,pv.stock,pv.variant_label,pv.custom_measurements,so.display_label,so.uk_size,so.us_size,so.eu_size,so.waist_inches FROM product_variants pv LEFT JOIN size_options so ON so.size_option_id=pv.size_option_id WHERE pv.variant_id=? AND pv.product_id=? AND pv.status='active'");
                     $vCheck->execute([$variantId, $productId]);
                     $vRow = $vCheck->fetch();
                     if (!$vRow || (int)$vRow['stock'] < 1) {
                         jsonResponse(['success' => false, 'message' => 'The selected size/variant is currently out of stock.'], 422);
                     }
                     $variantLabel = $vRow['variant_label'];
-                    $allowedSizes = array_filter([$vRow['variant_label'], $vRow['display_label'], 'US ' . $vRow['us_size'], 'UK ' . $vRow['uk_size'], 'EU ' . $vRow['eu_size']]);
-                    if (!in_array($size, $allowedSizes, true)) jsonResponse(['success' => false, 'message' => 'The chosen size does not match the selected inventory option.'], 422);
+                    if (!cartSizeMatchesVariant($size, $vRow)) jsonResponse(['success' => false, 'message' => 'The chosen size does not match the selected inventory option.'], 422);
                 } else {
                     $variantCheck = $pdo->prepare("SELECT COUNT(*) FROM product_variants WHERE product_id=? AND status='active'");
                     $variantCheck->execute([$productId]);
